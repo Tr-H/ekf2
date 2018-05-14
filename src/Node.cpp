@@ -222,14 +222,15 @@ namespace fuse_ekf_test {
         // states errors : q, vel, pos, angel_bias(dt), vel_bias(dt), magNED, magXYZ, wind 
         VectorXd Cov_diag(24);
         Cov_diag = VectorXd::Zero(24);
+        Matrix<double, 24, 24> Covariances_sqrt;
         Cov_diag.segment(0,4) << aligment_param.quatErr * 1, aligment_param.quatErr * 1, aligment_param.quatErr * 1, aligment_param.quatErr * 1;
         Cov_diag.segment(10,3) << aligment_param.delAngBiasErr * delta_t, aligment_param.delAngBiasErr * delta_t, aligment_param.delAngBiasErr * delta_t;
         Cov_diag.segment(13,3) << aligment_param.delVelBiasErr * delta_t, aligment_param.delVelBiasErr * delta_t, aligment_param.delVelBiasErr * delta_t;
         Cov_diag.segment(16,3) << aligment_param.magErrNED, aligment_param.magErrNED, aligment_param.magErrNED;
         Cov_diag.segment(19,3) << aligment_param.magErrXYZ, aligment_param.magErrXYZ, aligment_param.magErrXYZ;
         Cov_diag.segment(22,2) << aligment_param.windErrNE, aligment_param.windErrNE, aligment_param.windErrNE;
-        Covariances = Cov_diag.asDiagonal();
-        Covariances.noalias() = Covariances.adjoint() * Covariances;
+        Covariances_sqrt = Cov_diag.asDiagonal();
+        Covariances.noalias() = Covariances_sqrt.adjoint() * Covariances_sqrt;
         Covariances.block<3, 3>(4, 4) = cov_vel;
         Covariances.block<3, 3>(7, 7) = cov_pos;
 
@@ -267,8 +268,6 @@ namespace fuse_ekf_test {
         }
 
         //Remove sensor bias errors
-        Vector3d delAng_bias;
-        Vector3d delVel_bias;
         delAng_bias << states_[10], states_[11], states_[12];
         delVel_bias << states_[13], states_[14], states_[15];
         delAng = delAng - delAng_bias;
@@ -322,6 +321,7 @@ namespace fuse_ekf_test {
         double magSigmaXYZ;
         Matrix<double, 24, 1> processNoiseVariance_diag;
         Matrix<double, 24, 24> processNoiseVariance;
+        Matrix<double, 24, 24> processNoiseVariance_squa;
         dAngBiasSigma = dt_Cov * dt_Cov * Node::prediction_param.dAngBiasPnoise;
         dVelBiasSigma = dt_Cov * dt_Cov * Node::prediction_param.dVelBiasPnoise;
         magSigmaNED = dt_Cov * Node::prediction_param.magPnoiseNED;
@@ -334,11 +334,20 @@ namespace fuse_ekf_test {
                                      magSigmaXYZ, magSigmaXYZ, magSigmaXYZ,
                                      0.0, 0.0;
         processNoiseVariance = processNoiseVariance_diag.asDiagonal();
-        processNoiseVariance.noalias() = processNoiseVariance.adjoint() * processNoiseVariance;
+        processNoiseVariance_squa.noalias() = processNoiseVariance.adjoint() * processNoiseVariance;
         
         Matrix<double, 24, 24> F;
         Matrix<double, 24, 24> Q;
 
-
+        Vector3d dA = delAng_Cov;
+        Vector3d dA_b = delAng_bias;
+        Vector3d dV = delVel_Cov;
+        Vector3d dV_b = delVel_bias;
+        double dt = dt_Cov;
+        F = calcF24(dA, dV, dA_b, dV_b, dt, q_);
+        
+        double daVar = pow(dt_Cov * Node::prediction_param.angRateNoise, static_cast<double>(2.0));
+        double dvVar = pow(dt_Cov * Node::prediction_param.accelNoise, static_cast<double>(2.0));
+        //Q = calcQ24(daVar, dvVar, q_);
     }
 }

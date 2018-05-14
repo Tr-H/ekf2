@@ -76,9 +76,11 @@ namespace fuse_ekf_test {
             Eigen::AngleAxisd q_init_angaxi;
             Eigen::Quaterniond q_;
             Eigen::Matrix3d Tbn;
-            Eigen::Vector3d magWorld_;
             Eigen::Vector3d velWorld_;
             Eigen::Vector3d posWorld_;
+            Eigen::Vector3d delAng_bias;
+            Eigen::Vector3d delVel_bias;
+            Eigen::Vector3d magWorld_;
 
             //covariance
             Eigen::Matrix<double, 24, 24> Covariances;
