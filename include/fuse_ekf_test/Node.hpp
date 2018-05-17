@@ -35,7 +35,9 @@ namespace fuse_ekf_test {
             void PredictStates(Eigen::Vector3d measured_wm_, Eigen::Vector3d measured_am_, Eigen::Vector3d measured_mm_);
             void ConstrainStates();
             void PredictCovariance();
-
+            void FuseBodyVel(Eigen::Vector3d measured_vel_, Eigen::Vector3d velWorld, double bodyVelError_);
+            void FusePosition(Eigen::Vector3d measured_pos_, double worldPosError_);
+            
         private:
             static const unsigned int kROSQueueSize = 200;
             ros::NodeHandle nh_;
@@ -76,8 +78,8 @@ namespace fuse_ekf_test {
             Eigen::AngleAxisd q_init_angaxi;
             Eigen::Quaterniond q_;
             Eigen::Matrix3d Tbn;
-            Eigen::Vector3d velWorld_;
-            Eigen::Vector3d posWorld_;
+            Eigen::Vector3d prevVelWorld_;
+            Eigen::Vector3d prevPosWorld_;
             Eigen::Vector3d delAng_bias;
             Eigen::Vector3d delVel_bias;
             Eigen::Vector3d magWorld_;

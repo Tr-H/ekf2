@@ -1,0 +1,156 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+Calibrating	include/fuse_ekf_test/Node.hpp	/^                Calibrating = 1,$/;"	e	enum:fuse_ekf_test::Node::__anon1
+CalibrationComplete	include/fuse_ekf_test/Node.hpp	/^                CalibrationComplete = 2,$/;"	e	enum:fuse_ekf_test::Node::__anon1
+CamToBody	include/fuse_ekf_test/param_list.hpp	/^        Eigen::Matrix3d CamToBody;$/;"	m	struct:param::param_alignment
+ConstrainStates	src/Node.cpp	/^    void Node::ConstrainStates() {$/;"	f	class:fuse_ekf_test::Node
+Covariances	include/fuse_ekf_test/Node.hpp	/^            Eigen::Matrix<double, 24, 24> Covariances;$/;"	m	class:fuse_ekf_test::Node
+FUSE_EKF_TEST_NODE_HPP_	include/fuse_ekf_test/Node.hpp	2;"	d
+FuseBodyVel	src/Node.cpp	/^    void Node::FuseBodyVel(Vector3d measured_vel_, Vector3d velWorld,  double bodyVelError_) {$/;"	f	class:fuse_ekf_test::Node
+FusePosition	src/Node.cpp	/^    void Node::FusePosition(Vector3d measured_pos_, double worldPosError_) {$/;"	f	class:fuse_ekf_test::Node
+InitCovariance	src/Node.cpp	/^    void Node::InitCovariance(double delta_t) {$/;"	f	class:fuse_ekf_test::Node
+InitStates_Imu	src/Node.cpp	/^    void Node::InitStates_Imu(Vector3d measured_wm, Vector3d measured_am, Vector3d measured_mm) {$/;"	f	class:fuse_ekf_test::Node
+InitStates_Laser	src/Node.cpp	/^    void Node::InitStates_Laser(float measured_height) {$/;"	f	class:fuse_ekf_test::Node
+InitStates_Visual	src/Node.cpp	/^    void Node::InitStates_Visual(Vector3d measured_pos, Vector3d measured_vel) {$/;"	f	class:fuse_ekf_test::Node
+Node	include/fuse_ekf_test/Node.hpp	/^    class Node {$/;"	c	namespace:fuse_ekf_test
+Node	src/Node.cpp	/^    Node::Node(const ros::NodeHandle &nh): nh_(nh), $/;"	f	class:fuse_ekf_test::Node
+PARAM_LIST_H_	include/fuse_ekf_test/param_list.hpp	2;"	d
+PredictCovariance	src/Node.cpp	/^    void Node::PredictCovariance() {$/;"	f	class:fuse_ekf_test::Node
+PredictStates	src/Node.cpp	/^    void Node::PredictStates(Eigen::Vector3d measured_wm_, Eigen::Vector3d measured_am_, Eigen::Vector3d measured_mm_) {$/;"	f	class:fuse_ekf_test::Node
+QuatMult	include/fuse_ekf_test/transform_math.hpp	/^Eigen::Quaterniond QuatMult(Eigen::Quaterniond q1, Eigen::Quaterniond q2) {$/;"	f
+RotVector2Quat	include/fuse_ekf_test/transform_math.hpp	/^Eigen::Quaterniond RotVector2Quat(Eigen::Vector3d rotVec) {$/;"	f
+Tbn	include/fuse_ekf_test/Node.hpp	/^            Eigen::Matrix3d Tbn;$/;"	m	class:fuse_ekf_test::Node
+TimeSyncPolicy	include/fuse_ekf_test/Node.hpp	/^            typedef message_filters::sync_policies::ExactTime<sensor_msgs::Imu,sensor_msgs::MagneticField> TimeSyncPolicy;$/;"	t	class:fuse_ekf_test::Node
+Uncalibrated	include/fuse_ekf_test/Node.hpp	/^                Uncalibrated = 0,$/;"	e	enum:fuse_ekf_test::Node::__anon1
+_USE_MATH_DEFINES	include/fuse_ekf_test/param_list.hpp	4;"	d
+accelNoise	include/fuse_ekf_test/param_list.hpp	/^        float accelNoise; \/\/IMU accelerometer 1SD error noise including switch on bias uncertainty. (m\/sec^2)$/;"	m	struct:param::param_prediction
+aligment_param	include/fuse_ekf_test/Node.hpp	/^            param::param_alignment aligment_param;$/;"	m	class:fuse_ekf_test::Node
+angRateNoise	include/fuse_ekf_test/param_list.hpp	/^        float angRateNoise; \/\/IMU gyro 1SD rate process noise (rad\/sec)$/;"	m	struct:param::param_prediction
+baroHgtGate	include/fuse_ekf_test/param_list.hpp	/^        float baroHgtGate; \/\/Size of the IMU velocity innovation consistency check gate in SD$/;"	m	struct:param::param_fusion
+baroHgtNoise	include/fuse_ekf_test/param_list.hpp	/^        float baroHgtNoise; \/\/1SD observation noise of the baro measurements (m)$/;"	m	struct:param::param_fusion
+baroTimeDelay	include/fuse_ekf_test/param_list.hpp	/^        float baroTimeDelay; \/\/Baro measurement delay relative to IMU (sec)$/;"	m	struct:param::param_fusion
+bodyVelErrorMax	include/fuse_ekf_test/param_list.hpp	/^        float bodyVelErrorMax; \/\/Observation noise 1SD for the odometry sensor at the lowest quality value (m\/sec)$/;"	m	struct:param::param_fusion
+bodyVelErrorMin	include/fuse_ekf_test/param_list.hpp	/^        float bodyVelErrorMin; \/\/Observation noise 1SD for the odometry sensor at the highest quality value (m\/sec)$/;"	m	struct:param::param_fusion
+bodyVelGate	include/fuse_ekf_test/param_list.hpp	/^        float bodyVelGate; \/\/Size of the optical flow rate innovation consistency check gate in SD$/;"	m	struct:param::param_fusion
+bodyVelTimeDelay	include/fuse_ekf_test/param_list.hpp	/^        float bodyVelTimeDelay; \/\/sensor time delay relative to IMU (sec)$/;"	m	struct:param::param_fusion
+calcF24	include/fuse_ekf_test/transform_math.hpp	/^Eigen::Matrix<double, 24, 24> calcF24(Eigen::Vector3d del_Ang_Cov, Eigen::Vector3d del_Vel_Cov, Eigen::Vector3d del_Ang_bias, Eigen::Vector3d del_Vel_bias, double dt, Eigen::Quaterniond q) {$/;"	f
+calcH_VELX	include/fuse_ekf_test/transform_math.hpp	/^Eigen::Matrix<double, 1, 24> calcH_VELX(Eigen::Quaterniond q, Eigen::Vector3d velNED) {$/;"	f
+calcH_VELY	include/fuse_ekf_test/transform_math.hpp	/^Eigen::Matrix<double, 1, 24> calcH_VELY(Eigen::Quaterniond q, Eigen::Vector3d velNED) {$/;"	f
+calcH_VELZ	include/fuse_ekf_test/transform_math.hpp	/^Eigen::Matrix<double, 1, 24> calcH_VELZ(Eigen::Quaterniond q, Eigen::Vector3d velNED) {$/;"	f
+calcQ24	include/fuse_ekf_test/transform_math.hpp	/^Eigen::Matrix<double, 24, 24> calcQ24(Eigen::Vector3d da_Var, Eigen::Vector3d dv_Var, Eigen::Quaterniond q) {$/;"	f
+calibState_	include/fuse_ekf_test/Node.hpp	/^            } calibState_;$/;"	m	class:fuse_ekf_test::Node	typeref:enum:fuse_ekf_test::Node::__anon1
+control_param	include/fuse_ekf_test/Node.hpp	/^            param::param_control control_param;$/;"	m	class:fuse_ekf_test::Node
+correctedDelAng	include/fuse_ekf_test/Node.hpp	/^            Eigen::Vector3d correctedDelAng;$/;"	m	class:fuse_ekf_test::Node
+correctedDelVel	include/fuse_ekf_test/Node.hpp	/^            Eigen::Vector3d correctedDelVel;$/;"	m	class:fuse_ekf_test::Node
+covInit	include/fuse_ekf_test/param_list.hpp	/^        bool covInit;$/;"	m	struct:param::param_control
+cov_pos	include/fuse_ekf_test/Node.hpp	/^            Eigen::Matrix3d cov_pos;$/;"	m	class:fuse_ekf_test::Node
+cov_vel	include/fuse_ekf_test/Node.hpp	/^            Eigen::Matrix3d cov_vel;$/;"	m	class:fuse_ekf_test::Node
+dAngBiasPnoise	include/fuse_ekf_test/param_list.hpp	/^        float dAngBiasPnoise; \/\/IMU gyro bias 1SD rate of change (rad\/sec^2)$/;"	m	struct:param::param_prediction
+dVelBiasPnoise	include/fuse_ekf_test/param_list.hpp	/^        float dVelBiasPnoise; \/\/IMU accel bias 1SD rate of change (m\/sec^3)$/;"	m	struct:param::param_prediction
+delAngBiasErr	include/fuse_ekf_test/param_list.hpp	/^        float delAngBiasErr; \/\/Initial 1SD rate gyro bias uncertainty. (rad\/sec)$/;"	m	struct:param::param_alignment
+delAng_Cov	include/fuse_ekf_test/Node.hpp	/^            Eigen::Vector3d delAng_Cov; \/\/ delta angle vector used by the covariance prediction (rad)$/;"	m	class:fuse_ekf_test::Node
+delAng_bias	include/fuse_ekf_test/Node.hpp	/^            Eigen::Vector3d delAng_bias;$/;"	m	class:fuse_ekf_test::Node
+delVelBiasErr	include/fuse_ekf_test/param_list.hpp	/^        float delVelBiasErr; \/\/Initial 1SD accelerometer bias uncertainty. (m\/sec^2)$/;"	m	struct:param::param_alignment
+delVel_Cov	include/fuse_ekf_test/Node.hpp	/^            Eigen::Vector3d delVel_Cov; \/\/ delta velocity vector used by the covariance prediction (m\/sec)$/;"	m	class:fuse_ekf_test::Node
+delVel_bias	include/fuse_ekf_test/Node.hpp	/^            Eigen::Vector3d delVel_bias;$/;"	m	class:fuse_ekf_test::Node
+dt_Cov	include/fuse_ekf_test/Node.hpp	/^            double dt_Cov; \/\/ time step used by the covariance prediction (sec)$/;"	m	class:fuse_ekf_test::Node
+dt_Int_Cov	include/fuse_ekf_test/Node.hpp	/^            double dt_Int_Cov; \/\/ accumulated time step of covariance predictions (sec)$/;"	m	class:fuse_ekf_test::Node
+enableMag_	include/fuse_ekf_test/Node.hpp	/^            bool enableMag_;$/;"	m	class:fuse_ekf_test::Node
+euler2Quaternion	include/fuse_ekf_test/transform_math.hpp	/^Eigen::Quaterniond euler2Quaternion(double roll, double pitch, double yaw) {$/;"	f
+fuse_ekf_test	include/fuse_ekf_test/Node.hpp	/^namespace fuse_ekf_test {$/;"	n
+fuse_ekf_test	src/Node.cpp	/^namespace fuse_ekf_test {$/;"	n	file:
+fusion_param	include/fuse_ekf_test/Node.hpp	/^            param::param_fusion fusion_param;$/;"	m	class:fuse_ekf_test::Node
+gpsCheckTimeout	include/fuse_ekf_test/param_list.hpp	/^        float gpsCheckTimeout; \/\/Length of time that GPS measurements will be rejected by the filter before states are reset to the GPS velocity. (sec)$/;"	m	struct:param::param_fusion
+gpsOffTime	include/fuse_ekf_test/param_list.hpp	/^        float gpsOffTime; \/\/GPS aiding will be turned off at this time (sec)$/;"	m	struct:param::param_control
+gpsOnTime	include/fuse_ekf_test/param_list.hpp	/^        float gpsOnTime; \/\/GPS aiding will be turned back on at this time (sec)$/;"	m	struct:param::param_control
+gpsPosErrLim	include/fuse_ekf_test/param_list.hpp	/^        float gpsPosErrLim; \/\/GPS use will not start if reported GPS position error is greater than this (m)$/;"	m	struct:param::param_control
+gpsPosGate	include/fuse_ekf_test/param_list.hpp	/^        float gpsPosGate; \/\/Size of the IMU velocity innovation consistency check gate in SD$/;"	m	struct:param::param_fusion
+gpsSpdErrLim	include/fuse_ekf_test/param_list.hpp	/^        float gpsSpdErrLim; \/\/GPS use will not start if reported GPS speed error is greater than this (m\/s)$/;"	m	struct:param::param_control
+gpsTimeDelay	include/fuse_ekf_test/param_list.hpp	/^        float gpsTimeDelay; \/\/GPS measurement delay relative to IMU (sec)$/;"	m	struct:param::param_fusion
+gpsVelGate	include/fuse_ekf_test/param_list.hpp	/^        float gpsVelGate; \/\/Size of the IMU velocity innovation consistency check gate in SD$/;"	m	struct:param::param_fusion
+gravity	include/fuse_ekf_test/param_list.hpp	8;"	d
+hgtErr	include/fuse_ekf_test/param_list.hpp	/^        float hgtErr; \/\/Initial 1SD uncertainty in height. (m)$/;"	m	struct:param::param_alignment
+imuInitStates	include/fuse_ekf_test/param_list.hpp	/^        bool imuInitStates;$/;"	m	struct:param::param_control
+imu_Stamp	include/fuse_ekf_test/Node.hpp	/^            ros::Time imu_Stamp;$/;"	m	class:fuse_ekf_test::Node
+imu_mag_cb	src/Node.cpp	/^    void Node::imu_mag_cb(const sensor_msgs::ImuConstPtr& imuMsg, const sensor_msgs::MagneticFieldConstPtr& magMsg) {$/;"	f	class:fuse_ekf_test::Node
+imu_prevStamp	include/fuse_ekf_test/Node.hpp	/^            ros::Time imu_prevStamp;$/;"	m	class:fuse_ekf_test::Node
+init_	include/fuse_ekf_test/Node.hpp	/^            bool init_; \/\/ if init not complete, reinitialize $/;"	m	class:fuse_ekf_test::Node
+kROSQueueSize	include/fuse_ekf_test/Node.hpp	/^            static const unsigned int kROSQueueSize = 200;$/;"	m	class:fuse_ekf_test::Node
+laserInitStates	include/fuse_ekf_test/param_list.hpp	/^        bool laserInitStates;$/;"	m	struct:param::param_control
+laser_Stamp	include/fuse_ekf_test/Node.hpp	/^            ros::Time laser_Stamp;$/;"	m	class:fuse_ekf_test::Node
+laser_data_cb	src/Node.cpp	/^    void Node::laser_data_cb(const sensor_msgs::LaserScanConstPtr& laserMsg) {$/;"	f	class:fuse_ekf_test::Node
+laser_prevStamp	include/fuse_ekf_test/Node.hpp	/^            ros::Time laser_prevStamp;$/;"	m	class:fuse_ekf_test::Node
+last_dirft_constrain_time	include/fuse_ekf_test/Node.hpp	/^            double last_dirft_constrain_time;$/;"	m	class:fuse_ekf_test::Node
+last_synthetic_velocity_fusion_time	include/fuse_ekf_test/Node.hpp	/^            double last_synthetic_velocity_fusion_time;$/;"	m	class:fuse_ekf_test::Node
+magBias_	include/fuse_ekf_test/param_list.hpp	/^        Eigen::Vector3d magBias_; \/\/ calibrate mag get$/;"	m	struct:param::param_fusion
+magDeclDeg	include/fuse_ekf_test/param_list.hpp	/^        float magDeclDeg; \/\/Magnetic declination in deg$/;"	m	struct:param::param_fusion
+magErrNED	include/fuse_ekf_test/param_list.hpp	/^        float magErrNED; \/\/Initial 1SD uncertainty in earth frame NED magnetic field states. (gauss)$/;"	m	struct:param::param_alignment
+magErrXYZ	include/fuse_ekf_test/param_list.hpp	/^        float magErrXYZ; \/\/Initial 1SD uncertainty in body frame XYZ magnetic field states. (gauss)$/;"	m	struct:param::param_alignment
+magFieldError	include/fuse_ekf_test/param_list.hpp	/^        float magFieldError; \/\/Magnetic field measurement 1SD error including hard and soft iron interference. Used when magFuseMethod = 0 or 1. (gauss)$/;"	m	struct:param::param_fusion
+magFieldGate	include/fuse_ekf_test/param_list.hpp	/^        float magFieldGate; \/\/Size of the magnetic field innovation consistency check gate in SD$/;"	m	struct:param::param_fusion
+magFuseMethod	include/fuse_ekf_test/param_list.hpp	/^        float magFuseMethod; \/\/0: 3-Axis field fusion with free declination, 1: 3-Axis field fusion with constrained declination, 2: magnetic heading fusion. (None)$/;"	m	struct:param::param_fusion
+magHdgError	include/fuse_ekf_test/param_list.hpp	/^        float magHdgError; \/\/Magnetic heading measurement 1SD error including hard and soft iron interference. Used when magFuseMethod = 2. (rad)$/;"	m	struct:param::param_fusion
+magHdgGate	include/fuse_ekf_test/param_list.hpp	/^        float magHdgGate; \/\/Size of the magnetic heading innovation consistency check gate in SD$/;"	m	struct:param::param_fusion
+magPnoiseNED	include/fuse_ekf_test/param_list.hpp	/^        float magPnoiseNED; \/\/Earth magnetic field 1SD rate of change. (gauss\/sec)$/;"	m	struct:param::param_prediction
+magPnoiseXYZ	include/fuse_ekf_test/param_list.hpp	/^        float magPnoiseXYZ; \/\/Body magnetic field 1SD rate of change. (gauss\/sec)$/;"	m	struct:param::param_prediction
+magScale_	include/fuse_ekf_test/param_list.hpp	/^        Eigen::Vector3d magScale_;$/;"	m	struct:param::param_fusion
+magTimeDelay	include/fuse_ekf_test/param_list.hpp	/^        float magTimeDelay; \/\/Magnetomer time delay relative to IMU (sec)$/;"	m	struct:param::param_fusion
+magWorld_	include/fuse_ekf_test/Node.hpp	/^            Eigen::Vector3d magWorld_;$/;"	m	class:fuse_ekf_test::Node
+main	src/fuse_ekf_test.cpp	/^int main(int argc, char **argv) {$/;"	f
+nh_	include/fuse_ekf_test/Node.hpp	/^            ros::NodeHandle nh_;$/;"	m	class:fuse_ekf_test::Node
+param	include/fuse_ekf_test/param_list.hpp	/^namespace param {$/;"	n
+param_alignment	include/fuse_ekf_test/param_list.hpp	/^        param_alignment(){$/;"	f	struct:param::param_alignment
+param_alignment	include/fuse_ekf_test/param_list.hpp	/^    struct param_alignment {$/;"	s	namespace:param
+param_control	include/fuse_ekf_test/param_list.hpp	/^        param_control(){$/;"	f	struct:param::param_control
+param_control	include/fuse_ekf_test/param_list.hpp	/^    struct param_control {$/;"	s	namespace:param
+param_fusion	include/fuse_ekf_test/param_list.hpp	/^        param_fusion(){$/;"	f	struct:param::param_fusion
+param_fusion	include/fuse_ekf_test/param_list.hpp	/^    struct param_fusion {$/;"	s	namespace:param
+param_prediction	include/fuse_ekf_test/param_list.hpp	/^        param_prediction(){$/;"	f	struct:param::param_prediction
+param_prediction	include/fuse_ekf_test/param_list.hpp	/^    struct param_prediction {$/;"	s	namespace:param
+pitchAlignErr	include/fuse_ekf_test/param_list.hpp	/^        float pitchAlignErr; \/\/initial pitch misalignment (rad)$/;"	m	struct:param::param_control
+posErrNE	include/fuse_ekf_test/param_list.hpp	/^        float posErrNE; \/\/Initial 1SD position error when aligning without GPS. (m\/sec)$/;"	m	struct:param::param_alignment
+prediction_param	include/fuse_ekf_test/Node.hpp	/^            param::param_prediction prediction_param;$/;"	m	class:fuse_ekf_test::Node
+prevDelAng	include/fuse_ekf_test/Node.hpp	/^            Eigen::Vector3d prevDelAng;$/;"	m	class:fuse_ekf_test::Node
+prevDelAngSet	include/fuse_ekf_test/param_list.hpp	/^        bool prevDelAngSet;$/;"	m	struct:param::param_prediction
+prevDelVel	include/fuse_ekf_test/Node.hpp	/^            Eigen::Vector3d prevDelVel;$/;"	m	class:fuse_ekf_test::Node
+prevDelVelSet	include/fuse_ekf_test/param_list.hpp	/^        bool prevDelVelSet;$/;"	m	struct:param::param_prediction
+prevPosWorld_	include/fuse_ekf_test/Node.hpp	/^            Eigen::Vector3d prevPosWorld_;$/;"	m	class:fuse_ekf_test::Node
+prevVelWorld_	include/fuse_ekf_test/Node.hpp	/^            Eigen::Vector3d prevVelWorld_;$/;"	m	class:fuse_ekf_test::Node
+pubBias_	include/fuse_ekf_test/Node.hpp	/^            ros::Publisher pubBias_;$/;"	m	class:fuse_ekf_test::Node
+pubImu_	include/fuse_ekf_test/Node.hpp	/^            ros::Publisher pubImu_;$/;"	m	class:fuse_ekf_test::Node
+pubPose_	include/fuse_ekf_test/Node.hpp	/^            ros::Publisher pubPose_;$/;"	m	class:fuse_ekf_test::Node
+q_	include/fuse_ekf_test/Node.hpp	/^            Eigen::Quaterniond q_;$/;"	m	class:fuse_ekf_test::Node
+q_init_angaxi	include/fuse_ekf_test/Node.hpp	/^            Eigen::AngleAxisd q_init_angaxi;$/;"	m	class:fuse_ekf_test::Node
+quatErr	include/fuse_ekf_test/param_list.hpp	/^        float quatErr; \/\/Initial 1SD uncertainty in quaternion.$/;"	m	struct:param::param_alignment
+reset_param_alignment	include/fuse_ekf_test/param_list.hpp	/^        void reset_param_alignment(){$/;"	f	struct:param::param_alignment
+reset_param_control	include/fuse_ekf_test/param_list.hpp	/^        void reset_param_control(){$/;"	f	struct:param::param_control
+reset_param_fusion	include/fuse_ekf_test/param_list.hpp	/^        void reset_param_fusion(){$/;"	f	struct:param::param_fusion
+reset_param_prediction	include/fuse_ekf_test/param_list.hpp	/^        void reset_param_prediction(){$/;"	f	struct:param::param_prediction
+rollAlignErr	include/fuse_ekf_test/param_list.hpp	/^        float rollAlignErr; \/\/initial roll misalignment (rad)$/;"	m	struct:param::param_control
+states_	include/fuse_ekf_test/Node.hpp	/^            Eigen::Matrix<double, 24, 1> states_;$/;"	m	class:fuse_ekf_test::Node
+subField_	include/fuse_ekf_test/Node.hpp	/^            message_filters::Subscriber<sensor_msgs::MagneticField> subField_;$/;"	m	class:fuse_ekf_test::Node
+subImuUnsync_	include/fuse_ekf_test/Node.hpp	/^            ros::Subscriber subImuUnsync_;$/;"	m	class:fuse_ekf_test::Node
+subImu_	include/fuse_ekf_test/Node.hpp	/^            message_filters::Subscriber<sensor_msgs::Imu> subImu_;$/;"	m	class:fuse_ekf_test::Node
+subLaser_	include/fuse_ekf_test/Node.hpp	/^            ros::Subscriber subLaser_;$/;"	m	class:fuse_ekf_test::Node
+subVisual_	include/fuse_ekf_test/Node.hpp	/^            ros::Subscriber subVisual_;$/;"	m	class:fuse_ekf_test::Node
+sync_	include/fuse_ekf_test/Node.hpp	/^            message_filters::Synchronizer<TimeSyncPolicy> sync_;$/;"	m	class:fuse_ekf_test::Node
+velDriftTimeLim	include/fuse_ekf_test/param_list.hpp	/^        float velDriftTimeLim; \/\/The maximum time without observations to constrain velocity drift before a zero velocity is fused to prevent the filter diverging (sec)$/;"	m	struct:param::param_control
+velErrD	include/fuse_ekf_test/param_list.hpp	/^        float velErrD; \/\/Initial 1SD vertical velocity error when aligning without GPS. (m\/sec)$/;"	m	struct:param::param_alignment
+velErrNE	include/fuse_ekf_test/param_list.hpp	/^        float velErrNE; \/\/Initial 1SD velocity error when aligning without GPS. (m\/sec)$/;"	m	struct:param::param_alignment
+vis_Stamp	include/fuse_ekf_test/Node.hpp	/^            ros::Time vis_Stamp;$/;"	m	class:fuse_ekf_test::Node
+vis_odom_get	include/fuse_ekf_test/Node.hpp	/^            nav_msgs::Odometry vis_odom_get;$/;"	m	class:fuse_ekf_test::Node
+vis_prevStamp	include/fuse_ekf_test/Node.hpp	/^            ros::Time vis_prevStamp;$/;"	m	class:fuse_ekf_test::Node
+visoOffTime	include/fuse_ekf_test/param_list.hpp	/^        float visoOffTime; \/\/visual odometry aiding will be turned off at this time (sec)$/;"	m	struct:param::param_control
+visoOnTime	include/fuse_ekf_test/param_list.hpp	/^        float visoOnTime; \/\/visual odometry aiding will be turned back on at this time (sec)$/;"	m	struct:param::param_control
+visualInitStates	include/fuse_ekf_test/param_list.hpp	/^        bool visualInitStates;$/;"	m	struct:param::param_control
+visual_odom_cb	src/Node.cpp	/^    void Node::visual_odom_cb(const nav_msgs::OdometryConstPtr& visMsg) {$/;"	f	class:fuse_ekf_test::Node
+waitForGps	include/fuse_ekf_test/param_list.hpp	/^        float waitForGps; \/\/set to 1 if the filter start should be delayed until GPS checks to pass$/;"	m	struct:param::param_control
+windErrNE	include/fuse_ekf_test/param_list.hpp	/^        float windErrNE; \/\/Initial 1SD error in wind states. (m\/sec)$/;"	m	struct:param::param_alignment
+worldPosErrorMax	include/fuse_ekf_test/param_list.hpp	/^        float worldPosErrorMax;$/;"	m	struct:param::param_fusion
+worldPosErrorMin	include/fuse_ekf_test/param_list.hpp	/^        float worldPosErrorMin;$/;"	m	struct:param::param_fusion
+worldPosGate	include/fuse_ekf_test/param_list.hpp	/^        float worldPosGate;$/;"	m	struct:param::param_fusion
+yawAlignErr	include/fuse_ekf_test/param_list.hpp	/^        float yawAlignErr; \/\/initial yaw misalignment (rad)$/;"	m	struct:param::param_control

@@ -75,6 +75,9 @@ namespace param {
         float bodyVelErrorMin; //Observation noise 1SD for the odometry sensor at the highest quality value (m/sec)
         float bodyVelErrorMax; //Observation noise 1SD for the odometry sensor at the lowest quality value (m/sec)
         float bodyVelGate; //Size of the optical flow rate innovation consistency check gate in SD
+        float worldPosErrorMin;
+        float worldPosErrorMax;
+        float worldPosGate;
         void reset_param_fusion(){
             gpsTimeDelay = 0.1; //GPS measurement delay relative to IMU (sec)
             gpsVelGate = 5.0; //Size of the IMU velocity innovation consistency check gate in SD
@@ -97,6 +100,9 @@ namespace param {
             bodyVelErrorMin = 0.1; //Observation noise 1SD for the odometry sensor at the highest quality value (m/sec)
             bodyVelErrorMax = 0.9; //Observation noise 1SD for the odometry sensor at the lowest quality value (m/sec)
             bodyVelGate = 5.0;
+            worldPosErrorMin = 0.1;
+            worldPosErrorMax = 0.9;
+            worldPosGate = 5.0;
             magBias_ << 0, 0, 0;
             magScale_ << 1, 1, 1;
         }
@@ -133,6 +139,7 @@ namespace param {
         param_alignment(){
             reset_param_alignment();
         }
+        Eigen::Matrix3d CamToBody;
         float posErrNE; //Initial 1SD position error when aligning without GPS. (m/sec)
         float velErrNE; //Initial 1SD velocity error when aligning without GPS. (m/sec)
         float velErrD; //Initial 1SD vertical velocity error when aligning without GPS. (m/sec)
@@ -144,6 +151,7 @@ namespace param {
         float hgtErr; //Initial 1SD uncertainty in height. (m)
         float windErrNE; //Initial 1SD error in wind states. (m/sec)
         void reset_param_alignment(){
+            CamToBody = Eigen::Matrix3d::Identity();
             posErrNE = 10.0; //Initial 1SD position error when aligning without GPS. (m/sec)
             velErrNE = 5.0; //Initial 1SD velocity error when aligning without GPS. (m/sec)
             velErrD = 1.0; //Initial 1SD vertical velocity error when aligning without GPS. (m/sec)

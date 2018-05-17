@@ -24,8 +24,6 @@ namespace fuse_ekf_test {
         q_ = Quaterniond (q_init_angaxi);
         Tbn = q_.normalized().toRotationMatrix();
         magWorld_ = Vector3d::Zero();
-        velWorld_ = Vector3d::Zero();
-        posWorld_ = Vector3d::Zero();
 
         Covariances = MatrixXd::Zero(24, 24);
         cov_pos = Matrix3d::Zero();
@@ -58,12 +56,18 @@ namespace fuse_ekf_test {
     void Node::visual_odom_cb(const nav_msgs::OdometryConstPtr& visMsg) {
         ROS_INFO_ONCE("[ VISUAL ] DATA RECEIVED !");
 
+        
         //transform measured data
         Vector3d posm(0.0, 0.0, 0.0);
         Vector3d velm(0.0, 0.0, 0.0);
         posm << visMsg->pose.pose.position.x, visMsg->pose.pose.position.y, visMsg->pose.pose.position.z;
         velm << visMsg->twist.twist.linear.x, visMsg->twist.twist.linear.y, visMsg->twist.twist.linear.z;
         vis_Stamp = visMsg->header.stamp; 
+        Vector3d posBody_ = Node::aligment_param.CamToBody * posm;
+        Vector3d velBody_ = Node::aligment_param.CamToBody * velm;
+        Vector3d velWorld_ = Tbn * velBody_;
+        Vector3d posWorld_ = Tbn * posBody_;
+
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 cov_pos(i,j) = visMsg->pose.covariance[i * 6 + j];
@@ -73,11 +77,20 @@ namespace fuse_ekf_test {
         
         if (!Node::control_param.visualInitStates) {
             ROS_INFO("[ VISUAL ] STATES INIT !");
-            InitStates_Visual(posm, velm);
+            InitStates_Visual(posWorld_, velWorld_);
             vis_prevStamp = vis_Stamp;
             return;
         }
         
+        // convert quality metric to measurements to velocity
+        // double quality = viso_data.qual; cam or body?????
+        double quality = 0.5;
+        double bodyVelError = Node::fusion_param.bodyVelErrorMin * quality + Node::fusion_param.bodyVelErrorMax * (1 - quality);
+        double worldPosError = Node::fusion_param.worldPosErrorMin * quality + Node::fusion_param.worldPosErrorMax * (1 - quality);
+        FuseBodyVel(velBody_, velWorld_, bodyVelError);
+        FusePosition(posWorld_, worldPosError);
+
+
         vis_prevStamp = vis_Stamp;
     }
 
@@ -122,7 +135,7 @@ namespace fuse_ekf_test {
         }
         
         //correct magnetic field
-        mm.noalias() -= Node::fusion_param.magBias_;
+        mm = mm.eval() - Node::fusion_param.magBias_;
         for (int i = 0; i < 3; i++) {
             mm[i] /= Node::fusion_param.magScale_[i];
         }
@@ -184,10 +197,12 @@ namespace fuse_ekf_test {
         if (lengthAccel > 5 && lengthAccel < 14) {
             double tiltAng;
             Vector3d tiltUnitVec;
+            Vector3d tiltUnitVec_;
             tiltAng = atan2(sqrt(measured_am[0] * measured_am[0] + measured_am[1] * measured_am[1]), -measured_am[2]);
             if (tiltAng > 1e-3) {
                 tiltUnitVec = measured_am.cross(Vector3d (0, 0, -1));
-                tiltUnitVec.noalias() = tiltUnitVec / sqrt(tiltUnitVec.dot(tiltUnitVec));
+                tiltUnitVec_ = tiltUnitVec / sqrt(tiltUnitVec.dot(tiltUnitVec));
+                tiltUnitVec = tiltUnitVec_;
                 AngleAxisd accInitQ(tiltAng,tiltUnitVec);
                 q_ = Quaterniond(accInitQ); 
             }
@@ -230,7 +245,7 @@ namespace fuse_ekf_test {
         Cov_diag.segment(19,3) << aligment_param.magErrXYZ, aligment_param.magErrXYZ, aligment_param.magErrXYZ;
         Cov_diag.segment(22,2) << aligment_param.windErrNE, aligment_param.windErrNE, aligment_param.windErrNE;
         Covariances_sqrt = Cov_diag.asDiagonal();
-        Covariances.noalias() = Covariances_sqrt.adjoint() * Covariances_sqrt;
+        Covariances = Covariances_sqrt.transpose().eval() * Covariances_sqrt.eval();
         Covariances.block<3, 3>(4, 4) = cov_vel;
         Covariances.block<3, 3>(7, 7) = cov_pos;
 
@@ -239,10 +254,11 @@ namespace fuse_ekf_test {
 
     void Node::InitStates_Visual(Vector3d measured_pos, Vector3d measured_vel) {
         states_.segment(4,3) << measured_vel[0], measured_vel[1], measured_vel[2];
-        states_.segment(7,2) << measured_pos[0], measured_pos[1];
-        posWorld_[0] = measured_pos[0];
-        posWorld_[1] = measured_pos[1];
-        velWorld_ << measured_vel[0], measured_vel[1], measured_vel[2];
+        states_.segment(7,3) << measured_pos[0], measured_pos[1], measured_pos[2];
+        //prevPosWorld_[0] = measured_pos[0];
+        //prevPosWorld_[1] = measured_pos[1];
+        prevPosWorld_ << measured_pos[0], measured_pos[1], measured_pos[2];
+        prevVelWorld_ << measured_vel[0], measured_vel[1], measured_vel[2];
 
         Node::control_param.visualInitStates = true;
     }
@@ -334,7 +350,7 @@ namespace fuse_ekf_test {
                                      magSigmaXYZ, magSigmaXYZ, magSigmaXYZ,
                                      0.0, 0.0;
         processNoiseVariance = processNoiseVariance_diag.asDiagonal();
-        processNoiseVariance_squa.noalias() = processNoiseVariance.adjoint() * processNoiseVariance;
+        processNoiseVariance_squa = processNoiseVariance.transpose().eval() * processNoiseVariance.eval();
         
         Matrix<double, 24, 24> F;
         Matrix<double, 24, 24> Q;
@@ -346,8 +362,102 @@ namespace fuse_ekf_test {
         double dt = dt_Cov;
         F = calcF24(dA, dV, dA_b, dV_b, dt, q_);
         
-        double daVar = pow(dt_Cov * Node::prediction_param.angRateNoise, static_cast<double>(2.0));
-        double dvVar = pow(dt_Cov * Node::prediction_param.accelNoise, static_cast<double>(2.0));
-        //Q = calcQ24(daVar, dvVar, q_);
+        double daxVar = pow(dt_Cov * Node::prediction_param.angRateNoise, static_cast<double>(2.0));
+        double dvxVar = pow(dt_Cov * Node::prediction_param.accelNoise, static_cast<double>(2.0));
+        Vector3d daVar;
+        daVar << daxVar, daxVar, daxVar;
+        Vector3d dvVar;
+        dvVar << dvxVar, dvxVar, dvxVar;
+        Q = calcQ24(daVar, dvVar, q_);
+
+        Matrix<double, 24, 24> P_;
+        P_ = F * Covariances * F.transpose().eval() + Q;
+        P_= P_.eval() + processNoiseVariance_squa;
+        Covariances = 0.5 * (P_ + P_.transpose());
+
+        for (int i = 0; i < 24; i++) {
+            if(Covariances(i, i) < 0)
+                Covariances(i, i) = 0;
+        }
+
+    }
+
+    void Node::FuseBodyVel(Vector3d measured_vel_, Vector3d velWorld,  double bodyVelError_) {
+        Vector3d innovation = Vector3d::Zero(); // Body velocity innovation (m/s)
+        Vector3d varInnov = Vector3d::Zero(); // NED velocity innovation variance ((m/s)^2)
+        Matrix<double, 3, 24> H = MatrixXd::Zero(3, 24);
+        Vector3d relVelBodyPred = Tbn.transpose() * prevVelWorld_;
+        for (int i = 0; i < 3; i++) {
+            if (i == 0)
+                H.row(0) = calcH_VELX(q_, velWorld); 
+            else if (i == 1)
+                H.row(1) = calcH_VELY(q_, velWorld);
+            else if (i == 2)
+                H.row(2) = calcH_VELZ(q_, velWorld);
+        
+            varInnov[i] = H.row(i) * Covariances * H.row(i).transpose().eval() + bodyVelError_ * bodyVelError_;
+            innovation[i] = relVelBodyPred[i] - measured_vel_[i];
+        }
+
+        for (int i = 0; i < 3; i++) {
+            if (innovation[i] * innovation[i] / (varInnov[i] * Node::fusion_param.bodyVelGate * Node::fusion_param.bodyVelGate) > 1.0)
+                return;
+        }
+
+        Matrix<double, 24, 1> Kfusion;
+        for (int i = 0; i < 3; i++) {
+            Kfusion = (Covariances * H.row(i).transpose().eval()) / varInnov[i];
+            states_ = states_.eval() - Kfusion * innovation[i];
+            q_.w() = states_[0];
+            q_.x() = states_[1];
+            q_.y() = states_[2];
+            q_.z() = states_[3];
+            q_.normalized();
+            states_.segment(0, 4) << q_.w(), q_.x(), q_.y(), q_.z();
+            Covariances = Covariances.eval() - (Kfusion * H.row(i) * Covariances).eval();
+            Covariances = 0.5 * (Covariances.eval() + Covariances.transpose().eval());
+
+            for (int j = 0; j < 24; j++) {
+                if (Covariances(j, j) < 0)
+                    Covariances(j, j) = 0;
+            }
+        }
+
+        prevVelWorld_ << states_[4], states_[5], states_[6];
+    }
+
+    void Node::FusePosition(Vector3d measured_pos_, double worldPosError_) {
+        Vector3d innovation = Vector3d::Zero(); // NED position innovation (m)
+        Vector3d varInnov = Vector3d::Zero(); // NED position innovation variance ((m)^2)
+        Matrix<double, 3, 24> H = MatrixXd::Zero(3, 24);
+        int stateIndex;
+
+        for (int i = 0; i < 3; i++ ) {
+            stateIndex = i + 7;
+            innovation[i] = prevPosWorld_[i] - measured_pos_[i];
+            H(i, stateIndex) = 1;
+            varInnov[i] = (H.row(i) * Covariances * H.row(i).transpose().eval() + worldPosError_ * worldPosError_);
+
+        }
+
+        for (int i = 0; i < 3; i++ ) {
+            if (innovation[i] * innovation[i] / (varInnov[i] * Node::fusion_param.worldPosGate * Node::fusion_param.worldPosGate) > 1.0)
+                return;
+        }
+
+        Matrix<double, 24, 1> Kfusion; 
+        for (int i = 0; i < 3; i++ ) {
+            Kfusion = (Covariances * H.row(i).transpose().eval()) / varInnov[i];
+            states_ = states_.eval() - Kfusion * innovation[i];
+            Covariances = Covariances.eval() - (Kfusion * H.row(i) * Covariances).eval();
+            Covariances = 0.5 * (Covariances.eval() + Covariances.transpose().eval());
+
+            for (int j = 0; j < 24; j++) {
+                if (Covariances(j, j) < 0)
+                    Covariances(j, j) = 0;
+            }
+        }
+
+        prevPosWorld_ << states_[7], states_[8], states_[9];
     }
 }
