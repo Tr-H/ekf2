@@ -11,6 +11,7 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/exact_time.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -23,7 +24,7 @@ namespace fuse_ekf_test {
             Node(const ros::NodeHandle& nh);
 
             //callbacks
-            void visual_odom_cb(const nav_msgs::OdometryConstPtr&); 
+            void visual_odom_cb(const geometry_msgs::PoseWithCovarianceStampedConstPtr&); 
             void imu_mag_cb(const sensor_msgs::ImuConstPtr&, const sensor_msgs::MagneticFieldConstPtr&);
             void laser_data_cb(const sensor_msgs::LaserScanConstPtr&);
 

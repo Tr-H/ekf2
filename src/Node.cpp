@@ -45,6 +45,9 @@ namespace fuse_ekf_test {
         correctedDelAng = Vector3d::Zero();
         correctedDelVel = Vector3d::Zero();
 
+        prevPosWorld_ = Vector3d::Zero();
+        vis_prevStamp = ros::Time::now();
+
 
         //subscribe ~visual ~imu and ~magnetic_field
         subVisual_ = nh_.subscribe("/svo/pose_imu", 40, &Node::visual_odom_cb, this); 
@@ -54,7 +57,7 @@ namespace fuse_ekf_test {
         sync_.registerCallback(boost::bind(&Node::imu_mag_cb, this, _1, _2));
     }
 
-    void Node::visual_odom_cb(const nav_msgs::OdometryConstPtr& visMsg) {
+    void Node::visual_odom_cb(const geometry_msgs::PoseWithCovarianceStampedConstPtr& visMsg) {
         ROS_INFO_ONCE("[ VISUAL ] DATA RECEIVED !");
         cout << "1" << endl;
         
@@ -62,8 +65,9 @@ namespace fuse_ekf_test {
         Vector3d posm(0.0, 0.0, 0.0);
         Vector3d velm(0.0, 0.0, 0.0);
         posm << visMsg->pose.pose.position.x, visMsg->pose.pose.position.y, visMsg->pose.pose.position.z;
-        velm << visMsg->twist.twist.linear.x, visMsg->twist.twist.linear.y, visMsg->twist.twist.linear.z;
+        // velm << visMsg->twist.twist.linear.x, visMsg->twist.twist.linear.y, visMsg->twist.twist.linear.z;
         vis_Stamp = visMsg->header.stamp; 
+        velm = (posm - prevPosWorld_) / (vis_Stamp - vis_prevStamp).toSec();
         Vector3d posBody_ = Node::aligment_param.CamToBody * posm;
         Vector3d velBody_ = Node::aligment_param.CamToBody * velm;
         Vector3d velWorld_ = Tbn * velBody_;
