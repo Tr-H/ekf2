@@ -45,17 +45,18 @@ namespace fuse_ekf_test {
         correctedDelAng = Vector3d::Zero();
         correctedDelVel = Vector3d::Zero();
 
+
         //subscribe ~visual ~imu and ~magnetic_field
-        subVisual_ = nh_.subscribe("visual_odom", 40, &Node::visual_odom_cb, this); 
+        subVisual_ = nh_.subscribe("/svo/pose_imu", 40, &Node::visual_odom_cb, this); 
         // subLaser_ = nh_.subscribe("laser_data", 20, &Node::laser_data_cb, this);
-        subImu_.subscribe(nh_, "imu", kROSQueueSize);
-        subField_.subscribe(nh_, "magnetic_field", kROSQueueSize);
+        subImu_.subscribe(nh_, "/sync/imu/imu", kROSQueueSize);
+        subField_.subscribe(nh_, "/mavros/imu/mag", kROSQueueSize);
         sync_.registerCallback(boost::bind(&Node::imu_mag_cb, this, _1, _2));
     }
 
     void Node::visual_odom_cb(const nav_msgs::OdometryConstPtr& visMsg) {
         ROS_INFO_ONCE("[ VISUAL ] DATA RECEIVED !");
-
+        cout << "1" << endl;
         
         //transform measured data
         Vector3d posm(0.0, 0.0, 0.0);
@@ -309,6 +310,8 @@ namespace fuse_ekf_test {
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
         Tbn = q_.normalized().toRotationMatrix();
 
+        cout << states_.segment(0, 4) << endl;
+
         // transform body delta velocities to delta velocities in the nav frame
         Vector3d delVelNav;
         Vector3d g_vec;
@@ -429,7 +432,7 @@ namespace fuse_ekf_test {
                     Covariances(j, j) = 0;
             }
         }
-
+        cout << states_.segment(4, 3) << endl;
         prevVelWorld_ << states_[4], states_[5], states_[6];
     }
 
@@ -464,7 +467,7 @@ namespace fuse_ekf_test {
                     Covariances(j, j) = 0;
             }
         }
-
+        cout << states_.segment(7, 3) << endl; 
         prevPosWorld_ << states_[7], states_[8], states_[9];
     }
 }
