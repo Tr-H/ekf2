@@ -47,7 +47,7 @@ namespace fuse_ekf_test {
 
         //subscribe ~visual ~imu and ~magnetic_field
         subVisual_ = nh_.subscribe("visual_odom", 40, &Node::visual_odom_cb, this); 
-        subLaser_ = nh_.subscribe("laser_data", 20, &Node::laser_data_cb, this);
+        // subLaser_ = nh_.subscribe("laser_data", 20, &Node::laser_data_cb, this);
         subImu_.subscribe(nh_, "imu", kROSQueueSize);
         subField_.subscribe(nh_, "magnetic_field", kROSQueueSize);
         sync_.registerCallback(boost::bind(&Node::imu_mag_cb, this, _1, _2));
@@ -71,10 +71,16 @@ namespace fuse_ekf_test {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 cov_pos(i,j) = visMsg->pose.covariance[i * 6 + j];
-                cov_vel(i,j) = visMsg->twist.covariance[i * 6 + j];
+                // cov_vel(i,j) = visMsg->twist.covariance[i * 6 + j]; 
+
             }
         }
         
+        Vector3d cov_vel_diag;
+        cov_vel_diag << 5.0, 5.0, 1.0;
+        cov_vel = cov_vel_diag.asDiagonal();
+        cov_vel = cov_vel.transpose().eval() * cov_vel.eval();
+
         if (!Node::control_param.visualInitStates) {
             ROS_INFO("[ VISUAL ] STATES INIT !");
             InitStates_Visual(posWorld_, velWorld_);
@@ -342,8 +348,9 @@ namespace fuse_ekf_test {
         dVelBiasSigma = dt_Cov * dt_Cov * Node::prediction_param.dVelBiasPnoise;
         magSigmaNED = dt_Cov * Node::prediction_param.magPnoiseNED;
         magSigmaXYZ = dt_Cov * Node::prediction_param.magPnoiseXYZ;
-        processNoiseVariance_diag << 0.0, 0.0, 0.0, 0.0, 0.0,
-                                     0.0, 0.0, 0.0, 0.0, 0.0,
+        processNoiseVariance_diag << 0.0, 0.0, 0.0, 0.0, 
+                                     0.0, 0.0, 0.0, 
+                                     0.0, 0.0, 0.0,
                                      dAngBiasSigma, dAngBiasSigma, dAngBiasSigma,
                                      dVelBiasSigma, dVelBiasSigma, dVelBiasSigma,
                                      magSigmaNED, magSigmaNED, magSigmaNED,
