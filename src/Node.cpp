@@ -52,14 +52,13 @@ namespace fuse_ekf_test {
         //subscribe ~visual ~imu and ~magnetic_field
         subVisual_ = nh_.subscribe("/svo/pose_imu", 40, &Node::visual_odom_cb, this); 
         // subLaser_ = nh_.subscribe("laser_data", 20, &Node::laser_data_cb, this);
-        subImu_.subscribe(nh_, "/sync/imu/imu", kROSQueueSize);
+        subImu_.subscribe(nh_, "/mavros/imu/data_raw", kROSQueueSize);
         subField_.subscribe(nh_, "/mavros/imu/mag", kROSQueueSize);
         sync_.registerCallback(boost::bind(&Node::imu_mag_cb, this, _1, _2));
     }
 
     void Node::visual_odom_cb(const geometry_msgs::PoseWithCovarianceStampedConstPtr& visMsg) {
         ROS_INFO_ONCE("[ VISUAL ] DATA RECEIVED !");
-        cout << "1" << endl;
         
         //transform measured data
         Vector3d posm(0.0, 0.0, 0.0);
@@ -108,6 +107,8 @@ namespace fuse_ekf_test {
     void Node::laser_data_cb(const sensor_msgs::LaserScanConstPtr& laserMsg) {
         ROS_INFO_ONCE("[ LASER ] DATA RECEIVED !");
 
+        cout << "2" << endl;
+
         float height(0.0);
         //height = laserMsg->ranges[];
         laser_Stamp = laserMsg->header.stamp;
@@ -124,7 +125,6 @@ namespace fuse_ekf_test {
 
     void Node::imu_mag_cb(const sensor_msgs::ImuConstPtr& imuMsg, const sensor_msgs::MagneticFieldConstPtr& magMsg) {
         ROS_INFO_ONCE("[ Imu_Mag ] DATA RECEIVED !");
-
         // transform measured data
         Vector3d wm(0.0, 0.0, 0.0); // measured angular rate
         Vector3d am(0.0, 0.0, 0.0); // measured acceleration
@@ -254,7 +254,7 @@ namespace fuse_ekf_test {
         Cov_diag.segment(13,3) << aligment_param.delVelBiasErr * delta_t, aligment_param.delVelBiasErr * delta_t, aligment_param.delVelBiasErr * delta_t;
         Cov_diag.segment(16,3) << aligment_param.magErrNED, aligment_param.magErrNED, aligment_param.magErrNED;
         Cov_diag.segment(19,3) << aligment_param.magErrXYZ, aligment_param.magErrXYZ, aligment_param.magErrXYZ;
-        Cov_diag.segment(22,2) << aligment_param.windErrNE, aligment_param.windErrNE, aligment_param.windErrNE;
+        Cov_diag.segment(22,2) << aligment_param.windErrNE, aligment_param.windErrNE;
         Covariances_sqrt = Cov_diag.asDiagonal();
         Covariances = Covariances_sqrt.transpose().eval() * Covariances_sqrt.eval();
         Covariances.block<3, 3>(4, 4) = cov_vel;
@@ -314,7 +314,7 @@ namespace fuse_ekf_test {
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
         Tbn = q_.normalized().toRotationMatrix();
 
-        cout << states_.segment(0, 4) << endl;
+        cout << "q:" << q_.w() << q_.x() << q_.y() << q_.z() << endl;
 
         // transform body delta velocities to delta velocities in the nav frame
         Vector3d delVelNav;
@@ -375,7 +375,7 @@ namespace fuse_ekf_test {
         Vector3d dV_b = delVel_bias;
         double dt = dt_Cov;
         F = calcF24(dA, dV, dA_b, dV_b, dt, q_);
-        
+
         double daxVar = pow(dt_Cov * Node::prediction_param.angRateNoise, static_cast<double>(2.0));
         double dvxVar = pow(dt_Cov * Node::prediction_param.accelNoise, static_cast<double>(2.0));
         Vector3d daVar;
@@ -436,7 +436,7 @@ namespace fuse_ekf_test {
                     Covariances(j, j) = 0;
             }
         }
-        cout << states_.segment(4, 3) << endl;
+        cout << "velWorld:" << states_.segment(4, 3) << endl;
         prevVelWorld_ << states_[4], states_[5], states_[6];
     }
 
@@ -471,7 +471,7 @@ namespace fuse_ekf_test {
                     Covariances(j, j) = 0;
             }
         }
-        cout << states_.segment(7, 3) << endl; 
+        cout << "posWorld:" << states_.segment(7, 3) << endl; 
         prevPosWorld_ << states_[7], states_[8], states_[9];
     }
 }

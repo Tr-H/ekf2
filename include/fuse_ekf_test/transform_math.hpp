@@ -213,11 +213,38 @@ Eigen::Matrix<double, 24, 24> calcQ24(Eigen::Vector3d da_Var, Eigen::Vector3d dv
     double t37 = t35 + t36 - dvyVar * t18 * t31;
     double t38 = - dvxVar * t26 * t34 - dvyVar * t31 * t32 - dvzVar * t29 * t33;
     
-    Eigen::Matrix<double, 24, 24> Q_;
-    Q_ <<  daxVar * t11 * 0.25 + dayVar * t5 * 0.25 + dazVar * t4 * 0.25, t3, t7, t13, 0.0, 0.0, 0.0, 0.0,
-           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, // 1
-           t3, daxVar * t10 * 0.25 + dayVar * t4 * 0.25 + dazVar * t5 * 0.25, t9, t15, 0.0, 0.0, 0.0, 0.0,
+    Eigen::Matrix<double, 24, 24> Q_ = Eigen::MatrixXd::Zero(24, 24);
+    Q_(0, 0) = daxVar * t11 * 0.25 + dayVar * t5 * 0.25 + dazVar * t4 * 0.25;
+    Q_(0, 1) = t3;
+    Q_(0, 2) = t7;
+    Q_(0, 3) = t13;
+    Q_(1, 0) = t3; 
+    Q_(1, 1) = daxVar * t10 * 0.25 + dayVar * t4 * 0.25 + dazVar * t5 * 0.25;
+    Q_(1, 2) = t9;
+    Q_(1, 3) = t15;
+    Q_(2, 0) = t7; 
+    Q_(2, 1) = t9;
+    Q_(2, 2) = daxVar * t4 * 0.25 + dayVar * t10 * 0.25 + dazVar * t11 * 0.25;
+    Q_(2, 3) = t17; 
+    Q_(3, 0) = t13;
+    Q_(3, 1) = t15;
+    Q_(3, 2) = t17;
+    Q_(3, 3) = daxVar * t5 * 0.25 + dayVar * t11 * 0.25 + dazVar * t10 * 0.25;
+    Q_(4, 4) = dvxVar * t20 * t20 + dvyVar * t18 * t18 + dvzVar * t19 * t19;
+    Q_(4, 5) = t27 - dvxVar * t20 * t26 - dvzVar * t19 * t29;
+    Q_(4, 6) = t37;
+    Q_(5, 4) = t27 - dvzVar * t19 * (t25 - q2 * q3 * 2.0) - dvxVar * t20 * t26;
+    Q_(5, 5) = dvxVar * t26 * t26 + dvyVar * t30 * t30 + dvzVar * t29 * t29;
+    Q_(5, 6) = t38;
+    Q_(6, 4) = t37;
+    Q_(6, 5) = t38;
+    Q_(6, 6) = dvxVar * t34 * t34 + dvyVar * t31 * t31 + dvzVar * t33 * t33;
+
+
+    /*Q_ <<  daxVar * t11 * 0.25 + dayVar * t5 * 0.25 + dazVar * t4 * 0.25, t3, t7, t13, 0.0, 0.0, 0.0, 0.0, 
+           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
+           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, // 1 
+           t3, daxVar * t10 * 0.25 + dayVar * t4 * 0.25 + dazVar * t5 * 0.25, t9, t15, 0.0, 0.0, 0.0, 0.0, 
            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, // 2
            t7, t9, daxVar * t4 * 0.25 + dayVar * t10 * 0.25 + dazVar * t11 * 0.25, t17, 0.0, 0.0, 0.0, 0.0,
@@ -284,7 +311,7 @@ Eigen::Matrix<double, 24, 24> calcQ24(Eigen::Vector3d da_Var, Eigen::Vector3d dv
            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, // 23
            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0; // 24
+           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0; // 24 */
     return Q_;
 }
 

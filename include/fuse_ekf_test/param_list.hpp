@@ -42,7 +42,7 @@ namespace param {
             yawAlignErr = 0.0; 
             imuInitStates = false;
             visualInitStates = false;
-            laserInitStates = false;
+            laserInitStates = true;
             covInit = false;
         }
     };
