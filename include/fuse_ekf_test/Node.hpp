@@ -44,8 +44,6 @@ namespace fuse_ekf_test {
             ros::NodeHandle nh_;
             ros::Publisher pubImu_;
             ros::Publisher pubBias_;
-            ros::Publisher pubPose_;
-            
 
             // Subscriber
             message_filters::Subscriber<sensor_msgs::Imu> subImu_;

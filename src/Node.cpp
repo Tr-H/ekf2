@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fuse_ekf_test/Node.hpp>
 #include <fuse_ekf_test/transform_math.hpp>
-
+#include "geometry_math_type.h"
 
 using namespace Eigen;
 using namespace std;
@@ -22,7 +22,8 @@ namespace fuse_ekf_test {
         states_.Zero();
         q_init_angaxi = AngleAxisd(0, Vector3d (0, 0, 0));
         q_ = Quaterniond (q_init_angaxi);
-        Tbn = q_.normalized().toRotationMatrix();
+        get_dcm_from_q(Tbn, q_);
+        //Tbn = q_.normalized().toRotationMatrix();
         magWorld_ = Vector3d::Zero();
 
         Covariances = MatrixXd::Zero(24, 24);
@@ -36,8 +37,8 @@ namespace fuse_ekf_test {
         //cout << "states_:" << states_ << endl;
 
         // variables used to control dead-reckoning timeout
-        last_dirft_constrain_time = - Node::control_param.velDriftTimeLim;
-        last_synthetic_velocity_fusion_time = 0;
+        //last_dirft_constrain_time = - Node::control_param.velDriftTimeLim;
+        //last_synthetic_velocity_fusion_time = 0;
 
         //variables for prediction
         prevDelAng = Vector3d::Zero();
@@ -107,8 +108,6 @@ namespace fuse_ekf_test {
     void Node::laser_data_cb(const sensor_msgs::LaserScanConstPtr& laserMsg) {
         ROS_INFO_ONCE("[ LASER ] DATA RECEIVED !");
 
-        cout << "2" << endl;
-
         float height(0.0);
         //height = laserMsg->ranges[];
         laser_Stamp = laserMsg->header.stamp;
@@ -153,7 +152,7 @@ namespace fuse_ekf_test {
 
         // init states using imu
         if (!Node::control_param.imuInitStates) {
-            ROS_INFO("[ Imu_Mag ] STATES INIT !");
+             ROS_INFO("[ Imu_Mag ] STATES INIT !");
             InitStates_Imu(wm, am, mm);
             imu_prevStamp = imu_Stamp;
             return;
@@ -162,10 +161,10 @@ namespace fuse_ekf_test {
         if (!Node::control_param.covInit) {
             if (Node::control_param.imuInitStates & Node::control_param.visualInitStates &
                 Node::control_param.laserInitStates ) {
-                ROS_INFO("[ Covariances ] COV INIT !");
-                double delta_t_imu;
-                delta_t_imu = (imu_Stamp - imu_prevStamp).toSec();
+                ROS_INFO("[ Covariances ] COV INIT !"); 
+                double delta_t_imu; delta_t_imu = (imu_Stamp - imu_prevStamp).toSec();
                 InitCovariance(delta_t_imu);    
+                cout << Covariances << endl;
             } else {
                 ROS_INFO("[ Covariances ] Imu or VisualOdom is not inited !"); 
                 imu_prevStamp = imu_Stamp;
@@ -204,7 +203,7 @@ namespace fuse_ekf_test {
 
     void Node::InitStates_Imu(Vector3d measured_wm, Vector3d measured_am, Vector3d measured_mm) {
         // init quat using acc
-        double lengthAccel = sqrt(measured_am.dot(measured_am));
+        double lengthAccel = measured_am.norm();
         if (lengthAccel > 5 && lengthAccel < 14) {
             double tiltAng;
             Vector3d tiltUnitVec;
@@ -212,7 +211,7 @@ namespace fuse_ekf_test {
             tiltAng = atan2(sqrt(measured_am[0] * measured_am[0] + measured_am[1] * measured_am[1]), -measured_am[2]);
             if (tiltAng > 1e-3) {
                 tiltUnitVec = measured_am.cross(Vector3d (0, 0, -1));
-                tiltUnitVec_ = tiltUnitVec / sqrt(tiltUnitVec.dot(tiltUnitVec));
+                tiltUnitVec_ = tiltUnitVec.normalized();
                 tiltUnitVec = tiltUnitVec_;
                 AngleAxisd accInitQ(tiltAng,tiltUnitVec);
                 q_ = Quaterniond(accInitQ); 
@@ -221,28 +220,37 @@ namespace fuse_ekf_test {
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
             
         // add a roll pitch yaw mislignment
-        Quaterniond align_err_q = euler2Quaternion(Node::control_param.rollAlignErr, Node::control_param.pitchAlignErr, Node::control_param.yawAlignErr);
+        Quaterniond align_err_q;
+        Vector3d AlignErr;
+        AlignErr << Node::control_param.rollAlignErr, Node::control_param.pitchAlignErr, Node::control_param.yawAlignErr;
+        get_q_from_euler(align_err_q, AlignErr);
         q_ = QuatMult(align_err_q, q_);
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
 
         // init quat using mag
-        Vector3d euler_except_yaw = q_.toRotationMatrix().eulerAngles(2, 1, 0); // yaw pitch roll
+        Vector3d euler_except_yaw;
+        get_euler_from_q(euler_except_yaw, q_); // roll pitch yaw
+        // Vector3d euler_except_yaw = q_.toRotationMatrix().eulerAngles(2, 1, 0); // yaw pitch roll
         euler_except_yaw[2] = 0.0;
-        Quaterniond quat_except_yaw = euler2Quaternion(euler_except_yaw[2], euler_except_yaw[1], euler_except_yaw[0]);
-        Matrix3d rotation_except_yaw = quat_except_yaw.toRotationMatrix();
+        Quaterniond quat_except_yaw;
+        get_q_from_euler(quat_except_yaw, euler_except_yaw);
+        // cout << "q_except_yaw" << quat_except_yaw.toRotationMatrix().eulerAngles(2,1,0).transpose() << endl;
+
+        Matrix3d rotation_except_yaw ;
+        get_dcm_from_q(rotation_except_yaw, quat_except_yaw);
         Vector3d mm_NED = rotation_except_yaw * measured_mm;
-        euler_except_yaw[2] =  Node::fusion_param.magDeclDeg * (M_PI / 180) - atan2(mm_NED[1], mm_NED[0]);
-        q_ = euler2Quaternion(euler_except_yaw[2], euler_except_yaw[1], euler_except_yaw[0]);
+        euler_except_yaw[2] =  Node::fusion_param.magDeclDeg * (M_PI / 180) - atan2f(mm_NED[1], mm_NED[0]);
+        get_q_from_euler(q_, euler_except_yaw);
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
            
-        Tbn = q_.normalized().toRotationMatrix();
+        get_dcm_from_q(Tbn, q_.normalized());
         magWorld_ = Tbn * measured_mm;
         states_.segment(16,3) << magWorld_[0], magWorld_[1], magWorld_[2]; 
 
 
         Node::control_param.imuInitStates = true;
 
-    }
+    } 
 
     void Node::InitCovariance(double delta_t) {
         // states errors : q, vel, pos, angel_bias(dt), vel_bias(dt), magNED, magXYZ, wind 
@@ -282,6 +290,9 @@ namespace fuse_ekf_test {
 
     void Node::PredictStates(Eigen::Vector3d measured_wm_, Eigen::Vector3d measured_am_, Eigen::Vector3d measured_mm_) {
         double del_t;
+        //Vector3d test;
+        //get_euler_from_q(test, q_);
+        //cout << "q_" << test << endl;
         Vector3d delAng;
         Vector3d delVel;
         del_t = (imu_Stamp - imu_prevStamp).toSec();
@@ -312,7 +323,7 @@ namespace fuse_ekf_test {
         q_ = QuatMult(q_, deltaQuat);
         q_.normalized();
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
-        Tbn = q_.normalized().toRotationMatrix();
+        get_dcm_from_q(Tbn, q_);
 
         cout << "q:" << q_.w() << q_.x() << q_.y() << q_.z() << endl;
 

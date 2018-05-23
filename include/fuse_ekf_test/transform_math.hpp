@@ -2,7 +2,7 @@
 #include <Eigen/Core>
 #include <math.h>
 
-Eigen::Quaterniond euler2Quaternion(double roll, double pitch, double yaw) {
+/*Eigen::Quaterniond euler2Quaternion(double roll, double pitch, double yaw) {
     Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitZ());
     Eigen::AngleAxisd yawAngle(yaw, Eigen::Vector3d::UnitY());
     Eigen::AngleAxisd pitchAngle(pitch, Eigen::Vector3d::UnitX());
@@ -20,7 +20,7 @@ Eigen::Quaterniond euler2Quaternion(double roll, double pitch, double yaw) {
     //Eigen::Quaterniond q;
     //q << sinPhi * cosTheta * cosPsi - cosPhi * sinTheta * sinPsi, cosPhi * sinTheta * cosPsi + sinPhi * cosTheta * sinPsi, cosPhi * cosTheta * sinPsi - sinPhi * sinTheta * cosPsi, cosPhi * cosTheta * cosPsi + sinPhi * sinTheta * sinPsi; 
     return q;
-}
+} */
 
 Eigen::Quaterniond QuatMult(Eigen::Quaterniond q1, Eigen::Quaterniond q2) {
     Eigen::Quaterniond q;
@@ -47,6 +47,20 @@ Eigen::Quaterniond RotVector2Quat(Eigen::Vector3d rotVec) {
         q.z() = rotVec[2] / vecLength * sin(0.5 * vecLength);
     }
 }
+
+/*Eigen::Vector3d Quat2Euler(Eigen::Quaterniond q) {
+    double roll;
+    double pitch;
+    double yaw;
+    roll = atan2(2.0 * (q.y() * q.z() + q.w() * q.x()), 1.0 - 2.0 * (q.x() * q.x() + q.y() * q.y()));
+    pitch = asin(2.0 * (q.w() * q.y() - q.x() * q.z()));
+    yaw = atan2(2.0 * (q.w() * q.z() + q.x() * q.y()), 1.0 - 2.0 * (q.y() * q.y() + q.z() * q.z()));
+    Eigen::Vector3d Euler;
+    Euler[2] = yaw;
+    Euler[1] = pitch;
+    Euler[0] = roll;
+    return Euler;
+} */
 
 Eigen::Matrix<double, 24, 24> calcF24(Eigen::Vector3d del_Ang_Cov, Eigen::Vector3d del_Vel_Cov, Eigen::Vector3d del_Ang_bias, Eigen::Vector3d del_Vel_bias, double dt, Eigen::Quaterniond q) {
     double t2 = del_Ang_bias[0] * 0.5;
