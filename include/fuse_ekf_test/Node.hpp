@@ -1,6 +1,8 @@
 #ifndef FUSE_EKF_TEST_NODE_HPP_
 #define FUSE_EKF_TEST_NODE_HPP_
 
+#define USE_LOGGER 1
+
 #include <ros/ros.h>
 #include <math.h>
 #include <fuse_ekf_test/param_list.hpp>
@@ -12,11 +14,17 @@
 #include <message_filters/sync_policies/exact_time.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <visualization_msgs/Marker.h>
 #include <nav_msgs/Odometry.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/Dense>
-
+#ifdef USE_LOGGER
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <time.h>
+#endif
 
 namespace fuse_ekf_test {
     class Node {
@@ -39,11 +47,17 @@ namespace fuse_ekf_test {
             void FuseBodyVel(Eigen::Vector3d measured_vel_, Eigen::Vector3d velWorld, double bodyVelError_);
             void FusePosition(Eigen::Vector3d measured_pos_, double worldPosError_);
             
+#ifdef USE_LOGGER
+            void start_logger(const ros::Time &t);
+            std::string getTime_string();
+#endif
+
         private:
             static const unsigned int kROSQueueSize = 200;
             ros::NodeHandle nh_;
             ros::Publisher pubImu_;
             ros::Publisher pubBias_;
+            ros::Publisher rviz_pub;
 
             // Subscriber
             message_filters::Subscriber<sensor_msgs::Imu> subImu_;
@@ -82,6 +96,7 @@ namespace fuse_ekf_test {
             Eigen::Vector3d delAng_bias;
             Eigen::Vector3d delVel_bias;
             Eigen::Vector3d magWorld_;
+            visualization_msgs::Marker marker;
 
             //covariance
             Eigen::Matrix<double, 24, 24> Covariances;
@@ -110,6 +125,11 @@ namespace fuse_ekf_test {
                 CalibrationComplete = 2,
             } calibState_;
             bool init_; // if init not complete, reinitialize 
+
+#ifdef USE_LOGGER
+            // Logger ekf_Logger
+            std::ofstream ekf_logger;
+#endif
 
     };
 } // namespace fuse_ekf_test

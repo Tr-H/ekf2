@@ -46,6 +46,7 @@ Eigen::Quaterniond RotVector2Quat(Eigen::Vector3d rotVec) {
         q.y() = rotVec[1] / vecLength * sin(0.5 * vecLength);
         q.z() = rotVec[2] / vecLength * sin(0.5 * vecLength);
     }
+    return q;
 }
 
 /*Eigen::Vector3d Quat2Euler(Eigen::Quaterniond q) {

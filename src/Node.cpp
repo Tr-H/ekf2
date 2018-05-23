@@ -26,15 +26,28 @@ namespace fuse_ekf_test {
         //Tbn = q_.normalized().toRotationMatrix();
         magWorld_ = Vector3d::Zero();
 
+        // rviz
+        marker.header.frame_id = "base_link";
+        marker.header.stamp = ros::Time();
+        marker.ns = "fuse_ekf_test";
+        marker.id = 0;
+        marker.type = visualization_msgs::Marker::ARROW;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.scale.x = 1.0;
+        marker.scale.y = 0.1;
+        marker.scale.z = 0.1;
+        marker.color.a = 1.0;
+        marker.color.r = 0.0;
+        marker.color.g = 1.0;
+        marker.color.b = 0.0;
+
         Covariances = MatrixXd::Zero(24, 24);
         cov_pos = Matrix3d::Zero();
         cov_vel = Matrix3d::Zero();
         dt_Cov = 0.0;
         dt_Int_Cov = 0.0;
         //cout << "q_:" << q_.coeffs() << endl;
-        //cout << "q_0:" << q_.w() << endl;
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
-        //cout << "states_:" << states_ << endl;
 
         // variables used to control dead-reckoning timeout
         //last_dirft_constrain_time = - Node::control_param.velDriftTimeLim;
@@ -56,70 +69,13 @@ namespace fuse_ekf_test {
         subImu_.subscribe(nh_, "/mavros/imu/data_raw", kROSQueueSize);
         subField_.subscribe(nh_, "/mavros/imu/mag", kROSQueueSize);
         sync_.registerCallback(boost::bind(&Node::imu_mag_cb, this, _1, _2));
-    }
-
-    void Node::visual_odom_cb(const geometry_msgs::PoseWithCovarianceStampedConstPtr& visMsg) {
-        ROS_INFO_ONCE("[ VISUAL ] DATA RECEIVED !");
-        
-        //transform measured data
-        Vector3d posm(0.0, 0.0, 0.0);
-        Vector3d velm(0.0, 0.0, 0.0);
-        posm << visMsg->pose.pose.position.x, visMsg->pose.pose.position.y, visMsg->pose.pose.position.z;
-        // velm << visMsg->twist.twist.linear.x, visMsg->twist.twist.linear.y, visMsg->twist.twist.linear.z;
-        vis_Stamp = visMsg->header.stamp; 
-        velm = (posm - prevPosWorld_) / (vis_Stamp - vis_prevStamp).toSec();
-        Vector3d posBody_ = Node::aligment_param.CamToBody * posm;
-        Vector3d velBody_ = Node::aligment_param.CamToBody * velm;
-        Vector3d velWorld_ = Tbn * velBody_;
-        Vector3d posWorld_ = Tbn * posBody_;
-
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                cov_pos(i,j) = visMsg->pose.covariance[i * 6 + j];
-                // cov_vel(i,j) = visMsg->twist.covariance[i * 6 + j]; 
-
-            }
-        }
-        
-        Vector3d cov_vel_diag;
-        cov_vel_diag << 5.0, 5.0, 1.0;
-        cov_vel = cov_vel_diag.asDiagonal();
-        cov_vel = cov_vel.transpose().eval() * cov_vel.eval();
-
-        if (!Node::control_param.visualInitStates) {
-            ROS_INFO("[ VISUAL ] STATES INIT !");
-            InitStates_Visual(posWorld_, velWorld_);
-            vis_prevStamp = vis_Stamp;
-            return;
-        }
-        
-        // convert quality metric to measurements to velocity
-        // double quality = viso_data.qual; cam or body?????
-        double quality = 0.5;
-        double bodyVelError = Node::fusion_param.bodyVelErrorMin * quality + Node::fusion_param.bodyVelErrorMax * (1 - quality);
-        double worldPosError = Node::fusion_param.worldPosErrorMin * quality + Node::fusion_param.worldPosErrorMax * (1 - quality);
-        FuseBodyVel(velBody_, velWorld_, bodyVelError);
-        FusePosition(posWorld_, worldPosError);
 
 
-        vis_prevStamp = vis_Stamp;
-    }
+        rviz_pub = nh_.advertise<visualization_msgs::Marker> ("visualization_marker", 0);
 
-    void Node::laser_data_cb(const sensor_msgs::LaserScanConstPtr& laserMsg) {
-        ROS_INFO_ONCE("[ LASER ] DATA RECEIVED !");
-
-        float height(0.0);
-        //height = laserMsg->ranges[];
-        laser_Stamp = laserMsg->header.stamp;
-        
-        if (!Node::control_param.laserInitStates) {
-            ROS_INFO("[ LASER ] STATES INIT !");
-            InitStates_Laser(height);
-            laser_prevStamp = laser_Stamp;
-            return;
-        }
-
-        laser_prevStamp = laser_Stamp;
+#ifdef USE_LOGGER
+            start_logger(ros::Time::now());
+#endif
     }
 
     void Node::imu_mag_cb(const sensor_msgs::ImuConstPtr& imuMsg, const sensor_msgs::MagneticFieldConstPtr& magMsg) {
@@ -152,7 +108,7 @@ namespace fuse_ekf_test {
 
         // init states using imu
         if (!Node::control_param.imuInitStates) {
-             ROS_INFO("[ Imu_Mag ] STATES INIT !");
+            ROS_INFO("[ Imu_Mag ] STATES INIT !");
             InitStates_Imu(wm, am, mm);
             imu_prevStamp = imu_Stamp;
             return;
@@ -164,26 +120,22 @@ namespace fuse_ekf_test {
                 ROS_INFO("[ Covariances ] COV INIT !"); 
                 double delta_t_imu; delta_t_imu = (imu_Stamp - imu_prevStamp).toSec();
                 InitCovariance(delta_t_imu);    
-                cout << Covariances << endl;
             } else {
-                ROS_INFO("[ Covariances ] Imu or VisualOdom is not inited !"); 
+                ROS_INFO_ONCE("[ Covariances ] VisualOdom is not inited !"); 
                 imu_prevStamp = imu_Stamp;
                 return;
             }
-            
         }
 
         if (Node::control_param.imuInitStates & Node::control_param.visualInitStates &
             Node::control_param.laserInitStates & Node::control_param.covInit) {
             ROS_INFO_ONCE("[ ALL INIT DONE ] IMU VIS LASER COV init done !");
-
-            PredictStates(wm, am, mm);
         } else {
-            ROS_INFO("[ Predict error ] sensor init error !");
             imu_prevStamp = imu_Stamp;
             return;
         }
 
+        PredictStates(wm, am, mm);
         // constrain states
         ConstrainStates();
 
@@ -197,9 +149,91 @@ namespace fuse_ekf_test {
             dt_Int_Cov += dt_Cov;
             dt_Cov = 0;
         }
-
         imu_prevStamp = imu_Stamp;
     } 
+
+
+    void Node::visual_odom_cb(const geometry_msgs::PoseWithCovarianceStampedConstPtr& visMsg) {
+        ROS_INFO_ONCE("[ VISUAL ] DATA RECEIVED !");
+        //transform measured data
+        Vector3d posm(0.0, 0.0, 0.0);
+        Vector3d velm(0.0, 0.0, 0.0);
+        posm << visMsg->pose.pose.position.x, visMsg->pose.pose.position.y, visMsg->pose.pose.position.z;
+        // velm << visMsg->twist.twist.linear.x, visMsg->twist.twist.linear.y, visMsg->twist.twist.linear.z;
+        vis_Stamp = visMsg->header.stamp; 
+        velm = (posm - prevPosWorld_) / (vis_Stamp - vis_prevStamp).toSec();
+        Vector3d posBody_ = Node::aligment_param.CamToBody * posm;
+        Vector3d velBody_ = Node::aligment_param.CamToBody * velm;
+        Vector3d velWorld_ = Tbn * velBody_;
+        Vector3d posWorld_ = Tbn * posBody_;
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                cov_pos(i,j) = visMsg->pose.covariance[i * 6 + j];
+                // cov_vel(i,j) = visMsg->twist.covariance[i * 6 + j]; 
+            }
+        }
+        
+        Vector3d cov_vel_diag;
+        cov_vel_diag << 5.0, 5.0, 1.0;
+        cov_vel = cov_vel_diag.asDiagonal();
+        cov_vel = cov_vel.transpose().eval() * cov_vel.eval();
+
+        if (!Node::control_param.visualInitStates) {
+            ROS_INFO("[ VISUAL ] STATES INIT !");
+            InitStates_Visual(posWorld_, velWorld_);
+            vis_prevStamp = vis_Stamp;
+            return;
+        }
+
+        if (!Node::control_param.covInit) {
+            ROS_INFO_ONCE("[ Covariances ] Imu is not inited");
+            return;
+        }
+        
+        // convert quality metric to measurements to velocity
+        // double quality = viso_data.qual; cam or body?????
+        double quality = 0.5;
+        double bodyVelError = Node::fusion_param.bodyVelErrorMin * quality + Node::fusion_param.bodyVelErrorMax * (1 - quality);
+        double worldPosError = Node::fusion_param.worldPosErrorMin * quality + Node::fusion_param.worldPosErrorMax * (1 - quality);
+        FuseBodyVel(velBody_, velWorld_, bodyVelError);
+        FusePosition(posWorld_, worldPosError);
+#ifdef USE_LOGGER
+        Vector3d euler_;
+        get_euler_from_q(euler_, q_);
+        if (ekf_logger.is_open()) {
+            ekf_logger << vis_Stamp.toNSec() << ",";
+            ekf_logger << euler_[0] << ",";
+            ekf_logger << euler_[1] << ",";
+            ekf_logger << euler_[2] << ",";
+            ekf_logger << states_[4]<< ",";
+            ekf_logger << states_[5] << ",";
+            ekf_logger << states_[6] << ",";
+            ekf_logger << states_[7] << ",";
+            ekf_logger << states_[8] << ",";
+            ekf_logger << states_[9] << ",";
+            ekf_logger << states_[16] << ",";
+            ekf_logger << states_[17] << ",";
+            ekf_logger << states_[18] << endl; 
+        }
+#endif
+
+        vis_prevStamp = vis_Stamp;
+    }
+
+    void Node::laser_data_cb(const sensor_msgs::LaserScanConstPtr& laserMsg) {
+        ROS_INFO_ONCE("[ LASER ] DATA RECEIVED !");
+        float height(0.0);
+        //height = laserMsg->ranges[];
+        laser_Stamp = laserMsg->header.stamp;
+        if (!Node::control_param.laserInitStates) {
+            ROS_INFO("[ LASER ] STATES INIT !");
+            InitStates_Laser(height);
+            laser_prevStamp = laser_Stamp;
+            return;
+        }
+        laser_prevStamp = laser_Stamp;
+    }
 
     void Node::InitStates_Imu(Vector3d measured_wm, Vector3d measured_am, Vector3d measured_mm) {
         // init quat using acc
@@ -239,7 +273,8 @@ namespace fuse_ekf_test {
         Matrix3d rotation_except_yaw ;
         get_dcm_from_q(rotation_except_yaw, quat_except_yaw);
         Vector3d mm_NED = rotation_except_yaw * measured_mm;
-        euler_except_yaw[2] =  Node::fusion_param.magDeclDeg * (M_PI / 180) - atan2f(mm_NED[1], mm_NED[0]);
+        //euler_except_yaw[2] =  Node::fusion_param.magDeclDeg * (M_PI / 180) - atan2f(mm_NED[1], mm_NED[0]);
+        euler_except_yaw[2] = atan2f(mm_NED[1], mm_NED[0]);
         get_q_from_euler(q_, euler_except_yaw);
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
            
@@ -247,9 +282,7 @@ namespace fuse_ekf_test {
         magWorld_ = Tbn * measured_mm;
         states_.segment(16,3) << magWorld_[0], magWorld_[1], magWorld_[2]; 
 
-
         Node::control_param.imuInitStates = true;
-
     } 
 
     void Node::InitCovariance(double delta_t) {
@@ -292,12 +325,15 @@ namespace fuse_ekf_test {
         double del_t;
         //Vector3d test;
         //get_euler_from_q(test, q_);
-        //cout << "q_" << test << endl;
+        //cout << "q_0" << test << endl;
         Vector3d delAng;
         Vector3d delVel;
         del_t = (imu_Stamp - imu_prevStamp).toSec();
         delAng = measured_wm_ * del_t;
         delVel = measured_am_ * del_t;
+        //cout << "delAng " << delAng.transpose() << endl;
+        //cout << "delVel " << delVel.transpose() << endl;
+
         if (!Node::prediction_param.prevDelAngSet) {
             prevDelAng = delAng;
         }
@@ -320,12 +356,24 @@ namespace fuse_ekf_test {
         // convert the rotation vector to its equivalent quaternion
         Quaterniond deltaQuat;
         deltaQuat = RotVector2Quat(correctedDelAng);
+        
+        //Vector3d test;
+        //get_euler_from_q(test, deltaQuat);
+        //cout << "deltaQuat" << test << endl;
+
         q_ = QuatMult(q_, deltaQuat);
         q_.normalized();
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
         get_dcm_from_q(Tbn, q_);
 
-        cout << "q:" << q_.w() << q_.x() << q_.y() << q_.z() << endl;
+        //Vector3d test2;
+        //get_euler_from_q(test2, q_);
+        //cout << "q_1" << test2 << endl;
+        marker.pose.orientation.w = q_.w();
+        marker.pose.orientation.x = q_.x();
+        marker.pose.orientation.y = q_.y();
+        marker.pose.orientation.z = q_.z();
+        rviz_pub.publish(marker);
 
         // transform body delta velocities to delta velocities in the nav frame
         Vector3d delVelNav;
@@ -482,7 +530,53 @@ namespace fuse_ekf_test {
                     Covariances(j, j) = 0;
             }
         }
+
+        marker.pose.position.x = states_[7];
+        marker.pose.position.y = states_[8];
+        marker.pose.position.z = states_[9];
+ 
         cout << "posWorld:" << states_.segment(7, 3) << endl; 
         prevPosWorld_ << states_[7], states_[8], states_[9];
     }
+
+#ifdef USE_LOGGER
+    void Node::start_logger(const ros::Time &t) {
+        std::string logger_file_name("/home/nuc/fuse_ekf_ws/src/ekf2/src/logger/");
+        logger_file_name += "ekf_logger";
+        logger_file_name += getTime_string();
+        logger_file_name += ".csv";
+        if (ekf_logger.is_open()) {
+            ekf_logger.close();
+        }
+        ekf_logger.open(logger_file_name.c_str(), std::ios::out);
+        if (!ekf_logger.is_open()) {
+            cout << "cannot open the logger." << endl;
+        } else {
+            ekf_logger << "timestamp" << ",";
+            ekf_logger << "roll" << ",";
+            ekf_logger << "pitch" << ",";
+            ekf_logger << "yaw" << ",";
+            ekf_logger << "vel_x(cam)" << ",";
+            ekf_logger << "vel_y(cam)" << ",";
+            ekf_logger << "vei_z(cam)" << ",";
+            ekf_logger << "pos_x(cam)" << ",";
+            ekf_logger << "pos_y(cam)" << ",";
+            ekf_logger << "pos_z(cam)" << ",";
+            ekf_logger << "mag_x(NED)" << ",";
+            ekf_logger << "mag_y(NED)" << ",";
+            ekf_logger << "mag_z(NED)" << endl; 
+        }
+    }
+
+    std::string Node::getTime_string() {
+        time_t timep;
+        timep = time(0);
+        char tmp[64];
+        strftime(tmp, sizeof(tmp), "%Y_%m_%d_%H_%M_%S", localtime(&timep));
+        return tmp;
+    }
+
+#endif
 }
+
+

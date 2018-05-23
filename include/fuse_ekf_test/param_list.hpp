@@ -41,7 +41,7 @@ namespace param {
             pitchAlignErr = 0.0; //initial pitch misalignment (rad)
             yawAlignErr = 0.0; 
             imuInitStates = false;
-            visualInitStates = true;
+            visualInitStates = false;
             laserInitStates = true;
             covInit = false;
         }
