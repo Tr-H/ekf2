@@ -37,15 +37,20 @@ namespace fuse_ekf_test {
             void laser_data_cb(const sensor_msgs::LaserScanConstPtr&);
 
             void InitStates_Imu(Eigen::Vector3d measured_wm, Eigen::Vector3d measured_am, Eigen::Vector3d measured_mm);
-            void InitCovariance(double delta_t);
+            //void InitCovariance();
+            void initializeCovariance(); 
+            void initialiseQuatCovariances(Eigen::Vector3f &rot_vec_var);
             void InitStates_Visual(Eigen::Vector3d measured_pos, Eigen::Vector3d measured_vel);
             void InitStates_Laser(float measured_height);
 
             void PredictStates(Eigen::Vector3d measured_wm_, Eigen::Vector3d measured_am_, Eigen::Vector3d measured_mm_);
             void ConstrainStates();
-            void PredictCovariance();
-            void FuseBodyVel(Eigen::Vector3d measured_vel_, Eigen::Vector3d velWorld, double bodyVelError_);
-            void FusePosition(Eigen::Vector3d measured_pos_, double worldPosError_);
+            //void PredictCovariance();
+            void predictCov(Eigen::Vector3d del_Ang_Cov, Eigen::Vector3d del_Vel_Cov, Eigen::Vector3d del_Ang_bias, Eigen::Vector3d del_Vel_bias, double dt, Eigen::Quaterniond q); 
+            //void FuseBodyVel(Eigen::Vector3d measured_vel_, Eigen::Vector3d velWorld, double bodyVelError_);
+            //void FusePosition(Eigen::Vector3d measured_pos_, double worldPosError_);
+            void fuseVelPosHeight(Eigen::Vector3d velWorld, Eigen::Vector3d posWorld);
+            void fixCovarianceErrors(float (&P)[24][24]);
             
 #ifdef USE_LOGGER
             void start_logger(const ros::Time &t);
@@ -102,6 +107,11 @@ namespace fuse_ekf_test {
             Eigen::Matrix<double, 24, 24> Covariances;
             Eigen::Matrix3d cov_pos;
             Eigen::Matrix3d cov_vel;
+            double _ang_rate_mag_filt; 
+            double _accel_mag_filt; 
+            bool _accel_bias_inhibit;
+            bool _bad_vert_accel_detected;	
+            Eigen::Vector3d _prev_dvel_bias_var;
             
             //covariance prediction variables
             Eigen::Vector3d delAng_Cov; // delta angle vector used by the covariance prediction (rad)
@@ -112,6 +122,7 @@ namespace fuse_ekf_test {
             // variables used to control dead-reckoning timeout
             double last_dirft_constrain_time;
             double last_synthetic_velocity_fusion_time;
+            double _last_imu_bias_cov_reset_us;
 
             // variables used by prediction
             Eigen::Vector3d prevDelAng;

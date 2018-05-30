@@ -21,6 +21,55 @@
     //q << sinPhi * cosTheta * cosPsi - cosPhi * sinTheta * sinPsi, cosPhi * sinTheta * cosPsi + sinPhi * cosTheta * sinPsi, cosPhi * cosTheta * sinPsi - sinPhi * sinTheta * cosPsi, cosPhi * cosTheta * cosPsi + sinPhi * sinTheta * sinPsi; 
     return q;
 } */
+template<class T>
+const T& constrain(const T& x, const T& a, const T& b) {
+    if(x < a) {
+        return a;
+    }
+    else if(b < x) {
+        return b;
+    }
+    else
+        return x;
+}
+
+// return the square of two floating point numbers - used in auto coded sections
+inline float sq(float var)
+{
+	return var * var;
+}
+
+// zero specified range of rows in the state covariance matrix
+void zeroRows(float (&cov_mat)[24][24], uint8_t first, uint8_t last)
+{
+	uint8_t row;
+
+	for (row = first; row <= last; row++) {
+		memset(&cov_mat[row][0], 0, sizeof(cov_mat[0][0]) * 24);
+	}
+}
+
+// zero specified range of columns in the state covariance matrix
+void zeroCols(float (&cov_mat)[24][24], uint8_t first, uint8_t last)
+{
+	uint8_t row;
+
+	for (row = 0; row <= 23; row++) {
+		memset(&cov_mat[row][first], 0, sizeof(cov_mat[0][0]) * (1 + last - first));
+	}
+}
+
+// This function forces the covariance matrix to be symmetric
+void makeSymmetrical(float (&cov_mat)[24][24], uint8_t first, uint8_t last)
+{
+	for (unsigned row = first; row <= last; row++) {
+		for (unsigned column = 0; column < row; column++) {
+			float tmp = (cov_mat[row][column] + cov_mat[column][row]) / 2;
+			cov_mat[row][column] = tmp;
+			cov_mat[column][row] = tmp;
+		}
+	}
+}
 
 Eigen::Quaterniond QuatMult(Eigen::Quaterniond q1, Eigen::Quaterniond q2) {
     Eigen::Quaterniond q;
@@ -34,7 +83,7 @@ Eigen::Quaterniond QuatMult(Eigen::Quaterniond q1, Eigen::Quaterniond q2) {
 Eigen::Quaterniond RotVector2Quat(Eigen::Vector3d rotVec) {
     Eigen::Quaterniond q;
     double vecLength;
-    vecLength = rotVec.squaredNorm();
+    vecLength = rotVec.norm();
     if (vecLength < 1e-6) {
         q.w() = 1;
         q.x() = 0;
@@ -103,8 +152,8 @@ Eigen::Matrix<double, 24, 24> calcF24(Eigen::Vector3d del_Ang_Cov, Eigen::Vector
     double t38 = q.w() * q.x() * 2.0;
     Eigen::Matrix<double, 24, 24> F_;
     F_ << 1.0, t11, t14, t13, t27, t36, t19 + t20 -t33, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,            0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,            0.0, //1
+          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, //1
           del_Ang_Cov[0] * (-0.5) + t2, 1.0, t3 - t9, t14, t24, - t19 - t20 + t33, t36, 0.0,
           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, //2
