@@ -33,7 +33,7 @@ namespace fuse_ekf_test {
 
             //callbacks
             void visual_odom_cb(const geometry_msgs::PoseWithCovarianceStampedConstPtr&); 
-            void imu_mag_cb(const sensor_msgs::ImuConstPtr&, const sensor_msgs::MagneticFieldConstPtr&);
+            void imu_mag_cb(const sensor_msgs::ImuConstPtr&/*, const sensor_msgs::MagneticFieldConstPtr&*/);
             void laser_data_cb(const sensor_msgs::LaserScanConstPtr&);
 
             void InitStates_Imu(Eigen::Vector3d measured_wm, Eigen::Vector3d measured_am, Eigen::Vector3d measured_mm);
@@ -71,6 +71,7 @@ namespace fuse_ekf_test {
             nav_msgs::Odometry vis_odom_get;
             ros::Subscriber subVisual_;
             ros::Subscriber subLaser_;
+            ros::Subscriber rosbag_imu;
 
             // time synchronizer
             typedef message_filters::sync_policies::ExactTime<sensor_msgs::Imu,sensor_msgs::MagneticField> TimeSyncPolicy;

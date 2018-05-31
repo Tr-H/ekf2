@@ -17,7 +17,6 @@ namespace fuse_ekf_test {
     sync_(TimeSyncPolicy(kROSQueueSize), subImu_, subField_),
     calibState_(Uncalibrated), init_(false){
 
-        
         //init states vector (4x1 quaternion, 3x1 velocity, 3x1 position, 3x1 delAng bias, 3x1 delVel bias, 3x1 mag_world)
         states_.Zero();
         q_init_angaxi = AngleAxisd(0, Vector3d (0, 0, 0));
@@ -43,8 +42,8 @@ namespace fuse_ekf_test {
 
         // predict covariance
         Covariances = MatrixXd::Zero(24, 24);
-        cov_pos = Matrix3d::Zero();
-        cov_vel = Matrix3d::Zero();
+        //cov_pos = Matrix3d::Zero();
+        //cov_vel = Matrix3d::Zero();
         _ang_rate_mag_filt = 0.0; 
         _accel_mag_filt = 0.0; 
         _accel_bias_inhibit = false;
@@ -55,10 +54,6 @@ namespace fuse_ekf_test {
         //cout << "q_:" << q_.coeffs() << endl;
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
 
-        // variables used to control dead-reckoning timeout
-        //last_dirft_constrain_time = - Node::control_param.velDriftTimeLim;
-        //last_synthetic_velocity_fusion_time = 0;
-
         //variables for prediction
         prevDelAng = Vector3d::Zero();
         prevDelVel = Vector3d::Zero();
@@ -68,13 +63,13 @@ namespace fuse_ekf_test {
         prevPosWorld_ = Vector3d::Zero();
         vis_prevStamp = ros::Time::now();
 
-
         //subscribe ~visual ~imu and ~magnetic_field
         subVisual_ = nh_.subscribe("/svo/pose_imu", 40, &Node::visual_odom_cb, this); 
         // subLaser_ = nh_.subscribe("laser_data", 20, &Node::laser_data_cb, this);
-        subImu_.subscribe(nh_, "/mavros/imu/data_raw", kROSQueueSize);
-        subField_.subscribe(nh_, "/mavros/imu/mag", kROSQueueSize);
-        sync_.registerCallback(boost::bind(&Node::imu_mag_cb, this, _1, _2));
+        //subImu_.subscribe(nh_, "/mavros/imu/data_raw", kROSQueueSize);
+        //subField_.subscribe(nh_, "/mavros/imu/mag", kROSQueueSize);
+        //sync_.registerCallback(boost::bind(&Node::imu_mag_cb, this, _1, _2));
+        rosbag_imu = nh_.subscribe("/sync/imu/imu", 40, &Node::imu_mag_cb, this);
 
         rviz_pub = nh_.advertise<visualization_msgs::Marker> ("visualization_marker", 0);
 
@@ -83,27 +78,27 @@ namespace fuse_ekf_test {
 #endif
     }
 
-    void Node::imu_mag_cb(const sensor_msgs::ImuConstPtr& imuMsg, const sensor_msgs::MagneticFieldConstPtr& magMsg) {
+    void Node::imu_mag_cb(const sensor_msgs::ImuConstPtr& imuMsg /*, const sensor_msgs::MagneticFieldConstPtr& magMsg8*/) {
         ROS_INFO_ONCE("[ Imu_Mag ] DATA RECEIVED !");
         // transform measured data
         Vector3d wm(0.0, 0.0, 0.0); // measured angular rate
         Vector3d am(0.0, 0.0, 0.0); // measured acceleration
         Vector3d mm(0.0, 0.0, 0.0); // measured magnetic field
         wm << imuMsg->angular_velocity.x, imuMsg->angular_velocity.y, imuMsg->angular_velocity.z;
-        am << imuMsg->linear_acceleration.x, imuMsg->linear_acceleration.y, imuMsg->linear_acceleration.z;
-        mm << magMsg->magnetic_field.x, magMsg->magnetic_field.y, magMsg->magnetic_field.z;
+        am << imuMsg-> linear_acceleration.x, imuMsg->linear_acceleration.y, imuMsg->linear_acceleration.z;
+        //mm << magMsg->magnetic_field.x, magMsg->magnetic_field.y, magMsg->magnetic_field.z;
         imu_Stamp = imuMsg->header.stamp;
         // measured covariances
-        Matrix3d wCov = Matrix3d::Zero(); 
-        Matrix3d aCov = Matrix3d::Zero();
-        Matrix3d mCov = Matrix3d::Zero();
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                wCov(i,j) = imuMsg->angular_velocity_covariance[i * 3 + j];
-                aCov(i,j) = imuMsg->linear_acceleration_covariance[i * 3 + j];
-                mCov(i,j) = magMsg->magnetic_field_covariance[i * 3 + j];
-            }
-        }
+        //Matrix3d wCov = Matrix3d::Zero(); 
+        //Matrix3d aCov = Matrix3d::Zero();
+        //Matrix3d mCov = Matrix3d::Zero();
+        //for (int i = 0; i < 3; i++) {
+        //    for (int j = 0; j < 3; j++) {
+        //        wCov(i,j) = imuMsg->angular_velocity_covariance[i * 3 + j];
+        //        aCov(i,j) = imuMsg->linear_acceleration_covariance[i * 3 + j];
+        //        mCov(i,j) = magMsg->magnetic_field_covariance[i * 3 + j];
+        //    }
+        //}
         
         //correct magnetic field
         mm = mm.eval() - Node::fusion_param.magBias_;
@@ -287,11 +282,11 @@ namespace fuse_ekf_test {
         get_dcm_from_q(rotation_except_yaw, quat_except_yaw);
         Vector3d mm_NED = rotation_except_yaw * measured_mm;
         //euler_except_yaw[2] =  Node::fusion_param.magDeclDeg * (M_PI / 180) - atan2f(mm_NED[1], mm_NED[0]);
-        euler_except_yaw[2] = atan2f(mm_NED[1], mm_NED[0]);
+        euler_except_yaw[2] = 0.0; //atan2f(mm_NED[1], mm_NED[0]);
         get_q_from_euler(q_, euler_except_yaw);
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
-           
-        get_dcm_from_q(Tbn, q_.normalized());
+        q_ = q_.normalized();   
+        get_dcm_from_q(Tbn, q_);
         magWorld_ = Tbn * measured_mm;
         states_.segment(16,3) << magWorld_[0], magWorld_[1], magWorld_[2]; 
 
@@ -506,9 +501,6 @@ namespace fuse_ekf_test {
 
     void Node::PredictStates(Eigen::Vector3d measured_wm_, Eigen::Vector3d measured_am_, Eigen::Vector3d measured_mm_) {
         double del_t;
-        //Vector3d test;
-        //get_euler_from_q(test, q_);
-        //cout << "q_0" << test << endl;
         Vector3d delAng;
         Vector3d delVel;
         del_t = (imu_Stamp - imu_prevStamp).toSec();
@@ -547,13 +539,14 @@ namespace fuse_ekf_test {
         q_.x() = states_[1];
         q_.y() = states_[2];
         q_.z() = states_[3];
-        q_.normalized();
-
-        q_ = QuatMult(q_, deltaQuat);
-        q_.normalized();
-        states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
+        q_ = q_.normalized();
         get_dcm_from_q(Tbn, q_);
 
+        q_ = QuatMult(q_, deltaQuat);
+        q_ = q_.normalized();
+        states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
+        get_dcm_from_q(Tbn, q_);
+        cout << "a" << Tbn * measured_am_ << endl;
         //Vector3d test2;
         //get_euler_from_q(test2, q_);
         //cout << "q_1" << test2 << endl;
@@ -568,10 +561,10 @@ namespace fuse_ekf_test {
         Vector3d g_vec;
         g_vec << 0, 0, gravity;
         delVelNav = Tbn * correctedDelVel + g_vec * del_t;
-        //cout << "delVelNav: " << delVelNav << endl;
         Vector3d prevVel;
         prevVel << states_[4], states_[5], states_[6];
         states_.segment(4,3) << states_[4] + delVelNav[0], states_[5] + delVelNav[1], states_[6] + delVelNav[2];
+        //cout << "states_4-6_predict" << states_.segment(4, 3) << endl;
 
         //cout << "velmea:" << states_.segment(4, 3) << endl;
         // integrate the velocity vector to get the position using trapezoidal
@@ -1238,7 +1231,7 @@ namespace fuse_ekf_test {
             q_.x() = states_[1];
             q_.y() = states_[2];
             q_.z() = states_[3];
-            q_.normalized();
+            q_ = q_.normalized();
             states_.segment(0, 4) << q_.w(), q_.x(), q_.y(), q_.z();
             Covariances = Covariances.eval() - (Kfusion * H.row(i) * Covariances).eval();
             Covariances = 0.5 * (Covariances.eval() + Covariances.transpose().eval());
@@ -1408,7 +1401,7 @@ namespace fuse_ekf_test {
                 q_.x() = states_[1];
                 q_.y() = states_[2];
                 q_.z() = states_[3];
-                q_.normalized();
+                q_ = q_.normalized();
                 states_.segment(0, 4) << q_.w(), q_.x(), q_.y(), q_.z();
             }
 
@@ -1424,9 +1417,9 @@ namespace fuse_ekf_test {
         marker.pose.position.y = states_[8];
         marker.pose.position.z = states_[9];
  
-        cout << "velWorld:" << states_.segment(4, 3) << endl; 
+        //cout << "velWorld:" << states_.segment(4, 3) << endl; 
         //prevVelWorld_ << states_[4], states_[5], states_[6];
-        cout << "posWorld:" << states_.segment(7, 3) << endl; 
+        //cout << "posWorld:" << states_.segment(7, 3) << endl; 
         //prevPosWorld_ << states_[7], states_[8], states_[9];
 
 
