@@ -33,7 +33,7 @@ namespace fuse_ekf_test {
 
             //callbacks
             void visual_odom_cb(const geometry_msgs::PoseWithCovarianceStampedConstPtr&); 
-            void imu_mag_cb(const sensor_msgs::ImuConstPtr&/*, const sensor_msgs::MagneticFieldConstPtr&*/);
+            void imu_mag_cb(const sensor_msgs::ImuConstPtr&, const sensor_msgs::MagneticFieldConstPtr&);
             void laser_data_cb(const sensor_msgs::LaserScanConstPtr&);
 
             void InitStates_Imu(Eigen::Vector3d measured_wm, Eigen::Vector3d measured_am, Eigen::Vector3d measured_mm);
@@ -51,6 +51,7 @@ namespace fuse_ekf_test {
             //void FusePosition(Eigen::Vector3d measured_pos_, double worldPosError_);
             void fuseVelPosHeight(Eigen::Vector3d velWorld, Eigen::Vector3d posWorld);
             void fixCovarianceErrors(float (&P)[24][24]);
+            void fuseYaw(Eigen::Quaterniond);
             
 #ifdef USE_LOGGER
             void start_logger(const ros::Time &t);

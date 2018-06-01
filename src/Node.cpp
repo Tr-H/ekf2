@@ -66,10 +66,10 @@ namespace fuse_ekf_test {
         //subscribe ~visual ~imu and ~magnetic_field
         subVisual_ = nh_.subscribe("/svo/pose_imu", 40, &Node::visual_odom_cb, this); 
         // subLaser_ = nh_.subscribe("laser_data", 20, &Node::laser_data_cb, this);
-        //subImu_.subscribe(nh_, "/mavros/imu/data_raw", kROSQueueSize);
-        //subField_.subscribe(nh_, "/mavros/imu/mag", kROSQueueSize);
-        //sync_.registerCallback(boost::bind(&Node::imu_mag_cb, this, _1, _2));
-        rosbag_imu = nh_.subscribe("/sync/imu/imu", 40, &Node::imu_mag_cb, this);
+        subImu_.subscribe(nh_, "/mavros/imu/data_raw", kROSQueueSize);
+        subField_.subscribe(nh_, "/mavros/imu/mag", kROSQueueSize);
+        sync_.registerCallback(boost::bind(&Node::imu_mag_cb, this, _1, _2));
+        //rosbag_imu = nh_.subscribe("/sync/imu/imu", 40, &Node::imu_mag_cb, this);
 
         rviz_pub = nh_.advertise<visualization_msgs::Marker> ("visualization_marker", 0);
 
@@ -78,7 +78,7 @@ namespace fuse_ekf_test {
 #endif
     }
 
-    void Node::imu_mag_cb(const sensor_msgs::ImuConstPtr& imuMsg /*, const sensor_msgs::MagneticFieldConstPtr& magMsg8*/) {
+    void Node::imu_mag_cb(const sensor_msgs::ImuConstPtr& imuMsg , const sensor_msgs::MagneticFieldConstPtr& magMsg) {
         ROS_INFO_ONCE("[ Imu_Mag ] DATA RECEIVED !");
         // transform measured data
         Vector3d wm(0.0, 0.0, 0.0); // measured angular rate
@@ -161,7 +161,14 @@ namespace fuse_ekf_test {
         //transform measured data
         Vector3d posm(0.0, 0.0, 0.0);
         Vector3d velm(0.0, 0.0, 0.0);
+        Quaterniond q_measured_yaw;
         posm << visMsg->pose.pose.position.x, visMsg->pose.pose.position.y, visMsg->pose.pose.position.z;
+
+        q_measured_yaw.w() = visMsg->pose.pose.orientation.w;
+        q_measured_yaw.x() = visMsg->pose.pose.orientation.x;
+        q_measured_yaw.y() = visMsg->pose.pose.orientation.y;
+        q_measured_yaw.z() = visMsg->pose.pose.orientation.z;
+
         Vector3d posBody_ = Node::aligment_param.CamToBody * posm;
         Vector3d posWorld_ = Tbn * posBody_;
         // velm << visMsg->twist.twist.linear.x, visMsg->twist.twist.linear.y, visMsg->twist.twist.linear.z;
@@ -202,6 +209,7 @@ namespace fuse_ekf_test {
         //FusePosition(posWorld_, worldPosError);
 
         fuseVelPosHeight(velWorld_, posWorld_);
+        fuseYaw(q_measured_yaw);
 
         prevVelWorld_ = velWorld_;
         prevPosWorld_ = posWorld_;
@@ -287,6 +295,7 @@ namespace fuse_ekf_test {
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
         q_ = q_.normalized();   
         get_dcm_from_q(Tbn, q_);
+        cout << "init att rpy: " << euler_except_yaw[0] << " , " << euler_except_yaw[1] << " , " << euler_except_yaw[2] << endl;
         magWorld_ = Tbn * measured_mm;
         states_.segment(16,3) << magWorld_[0], magWorld_[1], magWorld_[2]; 
 
@@ -1413,9 +1422,9 @@ namespace fuse_ekf_test {
             }
         }
 
-        marker.pose.position.x = states_[7];
-        marker.pose.position.y = states_[8];
-        marker.pose.position.z = states_[9];
+        //marker.pose.position.x = states_[7];
+        //marker.pose.position.y = states_[8];
+        //marker.pose.position.z = states_[9];
  
         //cout << "velWorld:" << states_.segment(4, 3) << endl; 
         //prevVelWorld_ << states_[4], states_[5], states_[6];
@@ -1469,6 +1478,18 @@ namespace fuse_ekf_test {
 
         // accelerometer bias states
         
+    }
+
+    void Node::fuseYaw(Quaterniond q_measured_yaw_) {
+        Vector3d euler_vis;
+        get_euler_from_q(euler_vis, q_measured_yaw_);
+        cout << "euler_vis : " << euler_vis << endl;
+        Vector3d euler_before_fuse;
+        get_euler_from_q(euler_before_fuse, q_);
+        euler_before_fuse[2] = euler_vis[2];
+        get_q_from_euler(q_, euler_before_fuse);
+        states_.segment(0, 4) << q_.w(), q_.x(), q_.y(), q_.z();
+
     }
 
 #ifdef USE_LOGGER
