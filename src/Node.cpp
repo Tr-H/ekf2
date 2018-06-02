@@ -62,6 +62,10 @@ namespace fuse_ekf_test {
 
         prevPosWorld_ = Vector3d::Zero();
         vis_prevStamp = ros::Time::now();
+        
+        cam_to_body = AngleAxisd(M_PI_2, Vector3d (0, 1, 0));
+        q_cam_to_body = Quaterniond (cam_to_body);
+        get_dcm_from_q(R_cam_to_body, q_cam_to_body);
 
         //subscribe ~visual ~imu and ~magnetic_field
         subVisual_ = nh_.subscribe("/svo/pose_imu", 40, &Node::visual_odom_cb, this); 
@@ -161,15 +165,27 @@ namespace fuse_ekf_test {
         //transform measured data
         Vector3d posm(0.0, 0.0, 0.0);
         Vector3d velm(0.0, 0.0, 0.0);
-        Quaterniond q_measured_yaw;
         posm << visMsg->pose.pose.position.x, visMsg->pose.pose.position.y, visMsg->pose.pose.position.z;
+        posm = R_cam_to_body * posm.eval();
 
+        Quaterniond q_measured_yaw;
+        Quaterniond q_measured_yaw_;
+        Eigen::Matrix3d R_measured_yaw;
+        Eigen::Matrix3d R_measured_yaw_;
         q_measured_yaw.w() = visMsg->pose.pose.orientation.w;
-        q_measured_yaw.x() = visMsg->pose.pose.orientation.x;
+        q_measured_yaw.x() = visMsg->pose.pose.orientation.z;
         q_measured_yaw.y() = visMsg->pose.pose.orientation.y;
-        q_measured_yaw.z() = visMsg->pose.pose.orientation.z;
+        q_measured_yaw.z() = - visMsg->pose.pose.orientation.x;
+        //get_dcm_from_q(R_measured_yaw, q_measured_yaw);
+        //R_measured_yaw_ = R_cam_to_body * R_measured_yaw.eval();
+        //get_q_from_dcm(q_measured_yaw_, R_measured_yaw_);
+
+        Eigen::Vector3d euler_test;
+        get_euler_from_q(euler_test, q_measured_yaw);
+        cout << "euler: " << euler_test[0] << " , " << euler_test[1] << " , " << euler_test[2] << endl;
 
         Vector3d posBody_ = Node::aligment_param.CamToBody * posm;
+        get_dcm_from_q(Tbn, q_);
         Vector3d posWorld_ = Tbn * posBody_;
         // velm << visMsg->twist.twist.linear.x, visMsg->twist.twist.linear.y, visMsg->twist.twist.linear.z;
         vis_Stamp = visMsg->header.stamp; 
@@ -295,7 +311,7 @@ namespace fuse_ekf_test {
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
         q_ = q_.normalized();   
         get_dcm_from_q(Tbn, q_);
-        cout << "init att rpy: " << euler_except_yaw[0] << " , " << euler_except_yaw[1] << " , " << euler_except_yaw[2] << endl;
+        //cout << "init att rpy: " << euler_except_yaw[0] << " , " << euler_except_yaw[1] << " , " << euler_except_yaw[2] << endl;
         magWorld_ = Tbn * measured_mm;
         states_.segment(16,3) << magWorld_[0], magWorld_[1], magWorld_[2]; 
 
@@ -555,7 +571,7 @@ namespace fuse_ekf_test {
         q_ = q_.normalized();
         states_.segment(0,4) << q_.w(), q_.x(), q_.y(), q_.z();
         get_dcm_from_q(Tbn, q_);
-        cout << "a" << Tbn * measured_am_ << endl;
+        //cout << "a" << Tbn * measured_am_ << endl;
         //Vector3d test2;
         //get_euler_from_q(test2, q_);
         //cout << "q_1" << test2 << endl;
@@ -1311,7 +1327,7 @@ namespace fuse_ekf_test {
         _vel_pos_innov[0] = states_[4] - velWorld[0];
         _vel_pos_innov[1] = states_[5] - velWorld[1];
         _vel_pos_innov[2] = states_[6] - velWorld[2];
-        cout << "delta_vz : " << _vel_pos_innov[2] << " = " << states_[6] << "-" << velWorld[2] << endl;
+        //cout << "delta_vz : " << _vel_pos_innov[2] << " = " << states_[6] << "-" << velWorld[2] << endl;
         _vel_pos_innov[3] = states_[7] - posWorld[0];
         _vel_pos_innov[4] = states_[8] - posWorld[1];
         _vel_pos_innov[5] = states_[9] - posWorld[2];
@@ -1422,9 +1438,9 @@ namespace fuse_ekf_test {
             }
         }
 
-        //marker.pose.position.x = states_[7];
-        //marker.pose.position.y = states_[8];
-        //marker.pose.position.z = states_[9];
+        marker.pose.position.x = states_[7];
+        marker.pose.position.y = states_[8];
+        marker.pose.position.z = states_[9];
  
         //cout << "velWorld:" << states_.segment(4, 3) << endl; 
         //prevVelWorld_ << states_[4], states_[5], states_[6];
@@ -1483,7 +1499,7 @@ namespace fuse_ekf_test {
     void Node::fuseYaw(Quaterniond q_measured_yaw_) {
         Vector3d euler_vis;
         get_euler_from_q(euler_vis, q_measured_yaw_);
-        cout << "euler_vis : " << euler_vis << endl;
+        //cout << "euler_vis : " << euler_vis << endl;
         Vector3d euler_before_fuse;
         get_euler_from_q(euler_before_fuse, q_);
         euler_before_fuse[2] = euler_vis[2];

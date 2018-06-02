@@ -104,6 +104,9 @@ namespace fuse_ekf_test {
             Eigen::Vector3d delVel_bias;
             Eigen::Vector3d magWorld_;
             visualization_msgs::Marker marker;
+            Eigen::AngleAxisd cam_to_body;
+            Eigen::Quaterniond q_cam_to_body;
+            Eigen::Matrix3d R_cam_to_body;
 
             //covariance
             Eigen::Matrix<double, 24, 24> Covariances;
